@@ -34,4 +34,22 @@ public class Event {
         this.availableSeats = totalSeats;
     }
 
+
+    /**
+     * Réserve un nombre de places sur l'événement.
+     *
+     * @param seats nombre de places à réserver, doit être positif
+     * @throws IllegalStateException si le nombre de places demandées
+     *         dépasse le nombre de places encore disponibles
+     */
+    public void book(int seats) {
+        if (seats <= 0) {
+            throw new IllegalArgumentException("Le nombre de places à réserver doit être positif");
+        }
+        if (seats > availableSeats) {
+            throw new IllegalStateException("Pas assez de places disponibles pour cette réservation");
+        }
+        this.availableSeats -= seats;
+    }
+
 }

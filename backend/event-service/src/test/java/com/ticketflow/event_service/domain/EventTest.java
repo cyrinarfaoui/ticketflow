@@ -60,6 +60,37 @@ public class EventTest {
     }
 
 
+    @Test
+    void should_decrease_available_seats_when_booking() {
+        Event event = new Event(
+                UUID.randomUUID(),
+                "Concert de jazz",
+                "Description",
+                LocalDateTime.now().plusDays(30),
+                100
+        );
+
+        event.book(3);
+
+        assertThat(event.getAvailableSeats()).isEqualTo(97);
+    }
+
+    @Test
+    void should_throw_exception_when_booking_more_seats_than_available() {
+        Event event = new Event(
+                UUID.randomUUID(),
+                "Concert de jazz",
+                "Description",
+                LocalDateTime.now().plusDays(30),
+                5
+        );
+
+        assertThatThrownBy(() -> event.book(10))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("places disponibles");
+    }
+
+
 
 
 
