@@ -1,0 +1,15 @@
+services:
+  postgres-event-service:
+    image: postgres:16
+    container_name: ticketflow-postgres-event
+    environment:
+      POSTGRES_DB: eventdb
+      POSTGRES_USER: ticketflow
+      POSTGRES_PASSWORD: ticketflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_event_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_event_data:
