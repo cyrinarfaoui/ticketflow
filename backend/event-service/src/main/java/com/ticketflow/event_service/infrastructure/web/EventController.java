@@ -38,4 +38,9 @@ public class EventController {
     public EventResponse getEvent(@PathVariable UUID id) {
         return EventResponse.from(eventService.getEvent(id));
     }
+
+    @PostMapping("/{id}/book")
+    public EventResponse bookSeats(@PathVariable UUID id, @Valid @RequestBody BookSeatsRequest request) {
+        return EventResponse.from(eventService.bookSeats(id, request.seats()));
+    }
 }

@@ -33,4 +33,10 @@ public class EventService {
                 .orElseThrow(() -> new NoSuchElementException("Événement introuvable : " + id));
     }
 
+    public Event bookSeats(UUID eventId, int seats) {
+        Event event = getEvent(eventId);
+        event.book(seats);
+        return eventRepository.save(event);
+    }
+
 }
