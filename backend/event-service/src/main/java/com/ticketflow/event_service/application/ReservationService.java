@@ -35,4 +35,20 @@ public class ReservationService {
         return reservationRepository.save(reservation);
     }
 
+    @Transactional
+    public Reservation cancelReservation(UUID reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new NoSuchElementException("Réservation introuvable : " + reservationId));
+
+        reservation.cancel();
+        reservationRepository.save(reservation);
+
+        Event event = eventRepository.findById(reservation.getEventId())
+                .orElseThrow(() -> new NoSuchElementException("Événement introuvable : " + reservation.getEventId()));
+        event.release(reservation.getSeats());
+        eventRepository.save(event);
+
+        return reservation;
+    }
+
 }

@@ -17,11 +17,11 @@ public class EventController {
 
 
     private final EventService eventService;
-    private final ReservationService reservationService;
 
-    public EventController(EventService eventService, ReservationService reservationService) {
+
+    public EventController(EventService eventService) {
         this.eventService = eventService;
-        this.reservationService = reservationService;
+
     }
 
     @PostMapping
@@ -47,9 +47,5 @@ public class EventController {
         return EventResponse.from(eventService.bookSeats(id, request.seats()));
     }
 
-    @PostMapping("/{id}/reservations")
-    public ResponseEntity<ReservationResponse> createReservation(@PathVariable UUID id, @Valid @RequestBody CreateReservationRequest request) {
-        var reservation = reservationService.createReservation(id, request.seats());
-        return ResponseEntity.status(HttpStatus.CREATED).body(ReservationResponse.from(reservation));
-    }
+
 }

@@ -90,6 +90,22 @@ public class EventTest {
                 .hasMessageContaining("places disponibles");
     }
 
+    @Test
+    void should_increase_available_seats_when_releasing() {
+        Event event = new Event(
+                UUID.randomUUID(),
+                "Concert de jazz",
+                "Description",
+                LocalDateTime.now().plusDays(30),
+                100
+        );
+        event.book(10);
+
+        event.release(4);
+
+        assertThat(event.getAvailableSeats()).isEqualTo(94);
+    }
+
 
 
 

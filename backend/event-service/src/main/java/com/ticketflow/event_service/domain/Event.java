@@ -52,4 +52,12 @@ public class Event {
         this.availableSeats -= seats;
     }
 
+
+    public void release(int seats) {
+        if (seats <= 0) {
+            throw new IllegalArgumentException("Le nombre de places à libérer doit être positif");
+        }
+        this.availableSeats = Math.min(totalSeats, availableSeats + seats);
+    }
+
 }
