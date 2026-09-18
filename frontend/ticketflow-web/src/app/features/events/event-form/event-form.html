@@ -1,0 +1,37 @@
+
+<main>
+  <h2>Créer un événement</h2>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+    <div class="field">
+      <label for="title">Titre</label>
+      <input id="title" type="text" formControlName="title" />
+      @if (form.controls.title.invalid && form.controls.title.touched) {
+        <p class="error" role="alert">Le titre doit contenir au moins 3 caractères.</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="description">Description</label>
+      <textarea id="description" formControlName="description"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="date">Date et heure</label>
+      <input id="date" type="datetime-local" formControlName="date" />
+      @if (form.controls.date.invalid && form.controls.date.touched) {
+        <p class="error" role="alert">La date est obligatoire.</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="totalSeats">Nombre total de places</label>
+      <input id="totalSeats" type="number" min="1" formControlName="totalSeats" />
+      @if (form.controls.totalSeats.invalid && form.controls.totalSeats.touched) {
+        <p class="error" role="alert">Il faut au moins 1 place.</p>
+      }
+    </div>
+
+    <button type="submit">Créer l'événement</button>
+  </form>
+</main>

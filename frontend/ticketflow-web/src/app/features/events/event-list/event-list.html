@@ -1,0 +1,46 @@
+<main>
+  <h2>Événements disponibles</h2>
+
+  <a routerLink="/events/new" class="create-link">Créer un nouvel événement</a>
+
+  @if (errorMessage()) {
+    <p class="error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  @if (eventService.events$().length === 0) {
+    <p role="status">Aucun événement pour l'instant.</p>
+  } @else {
+    <ul class="event-list" role="list">
+      @for (event of eventService.events$(); track event.id) {
+        <li class="event-card">
+          <h3>{{ event.title }}</h3>
+          <p>{{ event.description }}</p>
+          <p>
+            <strong [attr.aria-label]="event.availableSeats + ' places disponibles sur ' + event.totalSeats">
+              {{ event.availableSeats }} / {{ event.totalSeats }}
+            </strong>
+          </p>
+
+          <div class="reserve-row">
+            <label [for]="'seats-' + event.id">Places</label>
+            <input
+              [id]="'seats-' + event.id"
+              type="number"
+              min="1"
+              [max]="event.availableSeats"
+              [value]="getSeats(event.id)"
+              (input)="setSeats(event.id, $any($event.target).value)"
+            />
+            <button
+              type="button"
+              (click)="reserve(event.id)"
+              [disabled]="event.availableSeats === 0"
+            >
+              Réserver
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</main>
