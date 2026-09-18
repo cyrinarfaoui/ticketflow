@@ -1,1 +1,13 @@
+<header class="app-header">
+  <span class="app-title">TicketFlow</span>
+
+  @if (authService.isLoggedIn()) {
+    <span class="user-info">Connecté : {{ authService.getUsername() }}</span>
+    <button type="button" (click)="authService.logout()">Se déconnecter</button>
+  } @else {
+    <button type="button" (click)="authService.register()">S'inscrire</button>
+    <button type="button" (click)="authService.login()">Se connecter</button>
+  }
+</header>
+
 <router-outlet></router-outlet>

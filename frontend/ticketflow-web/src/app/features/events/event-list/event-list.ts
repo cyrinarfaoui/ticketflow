@@ -1,7 +1,8 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { EventService } from '../../../core/services/event.service';
 import { RouterLink } from '@angular/router';
 import { ReservationService } from '../../../core/services/reservation.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   imports: [RouterLink],
@@ -11,10 +12,14 @@ import { ReservationService } from '../../../core/services/reservation.service';
 })
 export class EventList implements OnInit {
 
- readonly seatsToBook = signal<Record<string, number>>({});
+
+  protected authService = inject(AuthService);
+
+  readonly seatsToBook = signal<Record<string, number>>({});
   readonly errorMessage = signal<string | null>(null);
 
   constructor(
+  
     protected eventService: EventService,
     private reservationService: ReservationService
   ) {}

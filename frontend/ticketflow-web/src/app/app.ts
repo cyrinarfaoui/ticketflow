@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal ,inject} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { EventList } from './features/events/event-list/event-list';
+import { AuthService } from './core/services/auth.service';
 
 @Component({
   imports: [RouterOutlet,EventList],
@@ -10,4 +11,5 @@ import { EventList } from './features/events/event-list/event-list';
 })
 export class App {
   protected readonly title = signal('ticketflow-web');
+   protected authService = inject(AuthService);
 }

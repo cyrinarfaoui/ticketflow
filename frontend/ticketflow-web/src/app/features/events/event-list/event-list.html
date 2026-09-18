@@ -1,8 +1,9 @@
 <main>
   <h2>Événements disponibles</h2>
 
+ @if (authService.hasRole('ADMIN')) {
   <a routerLink="/events/new" class="create-link">Créer un nouvel événement</a>
-
+}
   @if (errorMessage()) {
     <p class="error" role="alert">{{ errorMessage() }}</p>
   }
