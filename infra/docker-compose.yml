@@ -24,18 +24,6 @@ services:
     volumes:
       - keycloak_data:/opt/keycloak/data
 
-  sonarqube:
-    image: sonarqube:community
-    container_name: ticketflow-sonarqube
-    ports:
-      - "9000:9000"
-    environment:
-      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
-    volumes:
-      - sonarqube_data:/opt/sonarqube/data
-      - sonarqube_extensions:/opt/sonarqube/extensions
-      - sonarqube_logs:/opt/sonarqube/logs
-
   event-service:
     build: ../backend/event-service
     container_name: ticketflow-event-service
@@ -63,11 +51,8 @@ services:
     extra_hosts:
       - "localhost:host-gateway"
     ports:
-      - "8082:8082"
+      - "8082:8082"  
 
 volumes:
   postgres_event_data:
   keycloak_data:
-  sonarqube_data:
-  sonarqube_extensions:
-  sonarqube_logs:
