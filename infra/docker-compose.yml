@@ -24,6 +24,35 @@ services:
     volumes:
       - keycloak_data:/opt/keycloak/data
 
+  event-service:
+    build: ../backend/event-service
+    container_name: ticketflow-event-service
+    depends_on:
+      - postgres-event-service
+      - keycloak
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-event-service:5432/eventdb
+      SPRING_DATASOURCE_USERNAME: ticketflow
+      SPRING_DATASOURCE_PASSWORD: ticketflow
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8081/realms/ticketflow
+      APP_CORS_ALLOWED_ORIGIN: http://localhost:4200
+    extra_hosts:
+      - "localhost:host-gateway"
+    ports:
+      - "8080:8080"
+
+  auth-service:
+    build: ../backend/auth-service
+    container_name: ticketflow-auth-service
+    depends_on:
+      - keycloak
+    environment:
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8081/realms/ticketflow
+    extra_hosts:
+      - "localhost:host-gateway"
+    ports:
+      - "8082:8082"  
+
 volumes:
   postgres_event_data:
   keycloak_data:
