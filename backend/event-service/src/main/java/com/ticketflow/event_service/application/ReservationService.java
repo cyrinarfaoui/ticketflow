@@ -1,7 +1,7 @@
 package com.ticketflow.event_service.application;
 
-
 import com.ticketflow.event_service.application.port.out.EventRepository;
+import com.ticketflow.event_service.application.port.out.ReservationEventPublisher;
 import com.ticketflow.event_service.application.port.out.ReservationRepository;
 import com.ticketflow.event_service.domain.Event;
 import com.ticketflow.event_service.domain.Reservation;
@@ -14,13 +14,16 @@ import java.util.UUID;
 @Service
 public class ReservationService {
 
-
     private final EventRepository eventRepository;
     private final ReservationRepository reservationRepository;
+    private final ReservationEventPublisher eventPublisher;
 
-    public ReservationService(EventRepository eventRepository, ReservationRepository reservationRepository) {
+    public ReservationService(EventRepository eventRepository,
+                              ReservationRepository reservationRepository,
+                              ReservationEventPublisher eventPublisher) {
         this.eventRepository = eventRepository;
         this.reservationRepository = reservationRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -32,7 +35,11 @@ public class ReservationService {
         eventRepository.save(event);
 
         Reservation reservation = new Reservation(UUID.randomUUID(), eventId, seats);
-        return reservationRepository.save(reservation);
+        Reservation saved = reservationRepository.save(reservation);
+
+        eventPublisher.publishCreated(saved);
+
+        return saved;
     }
 
     @Transactional
@@ -50,5 +57,4 @@ public class ReservationService {
 
         return reservation;
     }
-
 }
