@@ -2,36 +2,33 @@ package com.ticketflow.event_service.infrastructure.messaging;
 
 import com.ticketflow.event_service.application.port.out.ReservationEventPublisher;
 import com.ticketflow.event_service.domain.Reservation;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Component;
 
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class KafkaReservationEventPublisher implements ReservationEventPublisher {
 
+    private static final Logger log = LoggerFactory.getLogger(KafkaReservationEventPublisher.class);
     private static final String TOPIC = "reservation.created";
 
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final KafkaTemplate<String, ReservationCreatedEvent> kafkaTemplate;
+
+    public KafkaReservationEventPublisher(KafkaTemplate<String, ReservationCreatedEvent> kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
+    }
 
     @Override
     public void publishCreated(Reservation reservation) {
-        String key = reservation.getId().toString();
-        String message = "reservationId=%s;eventId=%s;seats=%d;status=%s".formatted(
-                reservation.getId(),
-                reservation.getEventId(),
-                reservation.getSeats(),
-                reservation.getStatus());
-
-        kafkaTemplate.send(TOPIC, key, message)
-                .whenComplete((result, error) -> {
-                    if (error != null) {
-                        log.error("Échec de l'envoi de reservation.created pour {}", key, error);
+        ReservationCreatedEvent event = ReservationCreatedEvent.from(reservation);
+        kafkaTemplate.send(TOPIC, event.reservationId(), event)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("Échec d'envoi reservation.created pour {}", event.reservationId(), ex);
                     } else {
                         log.info("reservation.created envoyé pour {} (partition {}, offset {})",
-                                key,
+                                event.reservationId(),
                                 result.getRecordMetadata().partition(),
                                 result.getRecordMetadata().offset());
                     }
