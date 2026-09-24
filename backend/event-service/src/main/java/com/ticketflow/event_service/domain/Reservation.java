@@ -35,4 +35,11 @@ public class Reservation {
         }
         this.status = ReservationStatus.CANCELLED;
     }
+
+    public void expire() {
+        if (status != ReservationStatus.PENDING) {
+            throw new IllegalStateException("Seule une réservation en attente peut expirer");
+        }
+        this.status = ReservationStatus.EXPIRED;
+    }
 }

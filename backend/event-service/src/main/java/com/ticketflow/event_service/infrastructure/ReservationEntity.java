@@ -3,17 +3,16 @@ package com.ticketflow.event_service.infrastructure;
 
 import com.ticketflow.event_service.domain.ReservationStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "reservations")
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
 public class ReservationEntity {
 
     @Id
@@ -28,4 +27,21 @@ public class ReservationEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ReservationStatus status;
+
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
+
+    // Constructeur conservé pour ne rien casser là où il est déjà utilisé (ex. ReservationMapper)
+    public ReservationEntity(UUID id, UUID eventId, int seats, ReservationStatus status) {
+        this(id, eventId, seats, status, Instant.now());
+    }
+
+    // Nouveau constructeur : utilisé par le batch pour changer le statut sans perdre la date de création d'origine
+    public ReservationEntity(UUID id, UUID eventId, int seats, ReservationStatus status, Instant createdAt) {
+        this.id = id;
+        this.eventId = eventId;
+        this.seats = seats;
+        this.status = status;
+        this.createdAt = createdAt;
+    }
 }
