@@ -6,9 +6,10 @@ import { AuthService } from '../../../core/services/auth.service';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { combineLatest, debounceTime, distinctUntilChanged, startWith, switchMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EventCard } from '../event-card/event-card';
 
 @Component({
-  imports: [RouterLink, ReactiveFormsModule],
+  imports: [RouterLink, ReactiveFormsModule, EventCard],
   selector: 'app-event-list',
   styleUrl: './event-list.scss',
   templateUrl: './event-list.html',
@@ -19,7 +20,7 @@ export class EventList implements OnInit {
   protected authService = inject(AuthService);
   private destroyRef = inject(DestroyRef);
 
-  readonly seatsToBook = signal<Record<string, number>>({});
+  
   readonly errorMessage = signal<string | null>(null);
 
   readonly searchControl = new FormControl('', { nonNullable: true });
@@ -45,25 +46,21 @@ export class EventList implements OnInit {
     ).subscribe();
   }
 
-  getSeats(eventId: string): number {
-    return this.seatsToBook()[eventId] ?? 1;
+ 
+
+reserve(eventId: string, seats: number): void {
+  this.errorMessage.set(null);
+
+  this.reservationService.createReservation(eventId, seats).subscribe({
+    next: () => this.eventService.loadEvents(),
+   error: (err) => {
+  if (err.status === 401) {
+    this.errorMessage.set('Connectez-vous pour réserver des places.');
+    return;
   }
-
-  setSeats(eventId: string, value: string): void {
-    this.seatsToBook.update((current) => ({ ...current, [eventId]: Number(value) }));
-  }
-
-  reserve(eventId: string): void {
-    this.errorMessage.set(null);
-    const seats = this.getSeats(eventId);
-
-    this.reservationService.createReservation(eventId, seats).subscribe({
-      next: () => this.eventService.loadEvents(),
-      error: (err) => {
-        const message = err.error?.error ?? 'Une erreur est survenue lors de la réservation.';
-        this.errorMessage.set(message);
-      }
-    });
-  }
-
+  const message = err.error?.error ?? 'Une erreur est survenue lors de la réservation.';
+  this.errorMessage.set(message);
+}
+  });
+}
 }

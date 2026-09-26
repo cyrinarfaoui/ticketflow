@@ -1,0 +1,29 @@
+@let e = event();
+
+<article class="event-card">
+  <h3>{{ e.title }}</h3>
+  <p class="event-location">📍 {{ e.location }}</p>
+  <p>{{ e.description }}</p>
+
+  <p>
+    <strong [attr.aria-label]="e.availableSeats + ' places disponibles sur ' + e.totalSeats">
+      {{ e.availableSeats }} / {{ e.totalSeats }}
+    </strong>
+  </p>
+
+  <div class="reserve-row">
+    <label [for]="'seats-' + e.id">Places</label>
+    <input
+      #seatsInput
+      [id]="'seats-' + e.id"
+      type="number"
+      min="1"
+      [max]="e.availableSeats"
+      [value]="seats()"
+      (input)="onSeatsChange(seatsInput.value)"
+    />
+    <button type="button" (click)="onReserve()" [disabled]="e.availableSeats === 0">
+      Réserver
+    </button>
+  </div>
+</article>

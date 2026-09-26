@@ -2,21 +2,22 @@
   <h2>Événements disponibles</h2>
 
   <div class="search-bar">
-  <label for="search-title">Rechercher</label>
-  <input id="search-title" type="text" [formControl]="searchControl" placeholder="Titre de l'événement..." />
+    <label for="search-title">Rechercher</label>
+    <input id="search-title" type="text" [formControl]="searchControl" placeholder="Titre de l'événement..." />
 
-  <label for="search-location">Lieu</label>
-  <input id="search-location" type="text" [formControl]="locationControl" placeholder="Ville, salle..." />
+    <label for="search-location">Lieu</label>
+    <input id="search-location" type="text" [formControl]="locationControl" placeholder="Ville, salle..." />
 
-  <label>
-    <input type="checkbox" [formControl]="availableOnlyControl" />
-    Places disponibles uniquement
-  </label>
-</div>
+    <label>
+      <input type="checkbox" [formControl]="availableOnlyControl" />
+      Places disponibles uniquement
+    </label>
+  </div>
 
- @if (authService.hasRole('ADMIN')) {
-  <a routerLink="/events/new" class="create-link">Créer un nouvel événement</a>
-}
+  @if (authService.hasRole('ADMIN')) {
+    <a routerLink="/events/new" class="create-link">Créer un nouvel événement</a>
+  }
+
   @if (errorMessage()) {
     <p class="error" role="alert">{{ errorMessage() }}</p>
   }
@@ -26,34 +27,8 @@
   } @else {
     <ul class="event-list" role="list">
       @for (event of eventService.events$(); track event.id) {
-        <li class="event-card">
-          <h3>{{ event.title }}</h3>
-          <p class="event-location">📍 {{ event.location }}</p>
-          <p>{{ event.description }}</p>
-          <p>
-            <strong [attr.aria-label]="event.availableSeats + ' places disponibles sur ' + event.totalSeats">
-              {{ event.availableSeats }} / {{ event.totalSeats }}
-            </strong>
-          </p>
-
-          <div class="reserve-row">
-            <label [for]="'seats-' + event.id">Places</label>
-            <input
-              [id]="'seats-' + event.id"
-              type="number"
-              min="1"
-              [max]="event.availableSeats"
-              [value]="getSeats(event.id)"
-              (input)="setSeats(event.id, $any($event.target).value)"
-            />
-            <button
-              type="button"
-              (click)="reserve(event.id)"
-              [disabled]="event.availableSeats === 0"
-            >
-              Réserver
-            </button>
-          </div>
+        <li>
+          <app-event-card [event]="event" (reserve)="reserve(event.id, $event)" />
         </li>
       }
     </ul>
