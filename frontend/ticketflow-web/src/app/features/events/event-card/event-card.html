@@ -2,28 +2,42 @@
 
 <article class="event-card">
   <h3>{{ e.title }}</h3>
-  <p class="event-location">📍 {{ e.location }}</p>
+  <p class="event-location"> {{ e.location }}</p>
   <p>{{ e.description }}</p>
 
-  <p>
-    <strong [attr.aria-label]="e.availableSeats + ' places disponibles sur ' + e.totalSeats">
-      {{ e.availableSeats }} / {{ e.totalSeats }}
-    </strong>
-  </p>
-
-  <div class="reserve-row">
-    <label [for]="'seats-' + e.id">Places</label>
-    <input
-      #seatsInput
-      [id]="'seats-' + e.id"
-      type="number"
-      min="1"
-      [max]="e.availableSeats"
-      [value]="seats()"
-      (input)="onSeatsChange(seatsInput.value)"
-    />
-    <button type="button" (click)="onReserve()" [disabled]="e.availableSeats === 0">
-      Réserver
-    </button>
+  <div class="gauge" aria-hidden="true">
+    <div
+      class="gauge__fill"
+      [attr.data-status]="status()"
+      [style.width.%]="fillPercent()"
+    ></div>
   </div>
+
+  @switch (status()) {
+    @case ('full') {
+      <p class="seats-label seats-label--full">Complet</p>
+    }
+    @case ('few') {
+      <p class="seats-label seats-label--few">Plus que {{ e.availableSeats }} places</p>
+    }
+    @default {
+      <p class="seats-label">{{ e.availableSeats }} places restantes sur {{ e.totalSeats }}</p>
+    }
+  }
+
+  @if (status() !== 'full') {
+    <div class="reserve-row">
+      <label [for]="'seats-' + e.id">Places</label>
+      <input
+        #seatsInput
+        [id]="'seats-' + e.id"
+        type="number"
+        min="1"
+        [max]="e.availableSeats"
+        [value]="seats()"
+        (input)="onSeatsChange(seatsInput.value)"
+      />
+      <button type="button" (click)="onReserve()">Réserver</button>
+    </div>
+  }
 </article>

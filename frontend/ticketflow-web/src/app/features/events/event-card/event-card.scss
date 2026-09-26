@@ -4,6 +4,8 @@
 }
 
 .event-card {
+  display: flex;
+  flex-direction: column;
   border: 1px solid #ccc;
   border-radius: 8px;
   padding: 1rem;
@@ -15,10 +17,8 @@
 }
 
 .reserve-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
 
   input {
     width: 60px;
@@ -44,5 +44,43 @@
     &:hover:not(:disabled) {
       background-color: var(--color-primary-dark);
     }
+  }
+}
+
+.gauge {
+  height: 6px;
+  border-radius: 3px;
+  background-color: #e5e7eb;
+  overflow: hidden;
+  margin: 0.5rem 0 0.25rem;
+}
+
+.gauge__fill {
+  height: 100%;
+  background-color: var(--color-primary);
+  transition: width 0.3s ease;
+
+  &[data-status='few'] {
+    background-color: #d97706;
+  }
+
+  &[data-status='full'] {
+    background-color: #9ca3af;
+  }
+}
+
+.seats-label {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #4b5563;
+
+  &--few {
+    color: #b45309;
+    font-weight: 600;
+  }
+
+  &--full {
+    color: var(--color-error);
+    font-weight: 600;
   }
 }
