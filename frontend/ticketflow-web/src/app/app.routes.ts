@@ -7,7 +7,6 @@ import { adminGuard } from './core/guards/admin.guard';
 export const routes: Routes = [
 
       { path: '', component: EventList },
-      { path: 'events/new', component: EventForm },
       { path: 'events/new', component: EventForm, canActivate: [adminGuard] }
 
 ];

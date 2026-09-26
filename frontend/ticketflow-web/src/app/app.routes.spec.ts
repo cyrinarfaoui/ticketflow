@@ -1,0 +1,56 @@
+import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter, Router } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
+import { AuthService } from './core/services/auth.service';
+import { EventForm } from './features/events/event-form/event-form';
+import { routes } from './app.routes';
+
+describe('Routes de l\'application (sécurité)', () => {
+  let authService: jasmine.SpyObj<AuthService>;
+
+  beforeEach(() => {
+    authService = jasmine.createSpyObj<AuthService>('AuthService', ['isLoggedIn', 'hasRole']);
+
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter(routes),              // les VRAIES routes de l'application
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: AuthService, useValue: authService },
+      ],
+    });
+  });
+
+  it('redirige un visiteur non connecté vers l\'accueil', async () => {
+    authService.isLoggedIn.and.returnValue(false);
+    authService.hasRole.and.returnValue(false);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/events/new');
+
+    expect(TestBed.inject(Router).url).toBe('/');
+  });
+
+  it('redirige un utilisateur connecté mais non admin vers l\'accueil', async () => {
+    authService.isLoggedIn.and.returnValue(true);
+    authService.hasRole.and.returnValue(false);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/events/new');
+
+    expect(TestBed.inject(Router).url).toBe('/');
+  });
+
+  it('laisse un admin accéder au formulaire de création', async () => {
+    authService.isLoggedIn.and.returnValue(true);
+    authService.hasRole.and.returnValue(true);
+
+    const harness = await RouterTestingHarness.create();
+    const page = await harness.navigateByUrl('/events/new', EventForm);
+
+    expect(TestBed.inject(Router).url).toBe('/events/new');
+    expect(page).toBeInstanceOf(EventForm);
+  });
+});
