@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Ajout d'une colonne obligatoire sur une table qui contient deja des lignes, en 3 temps :
+        1. ajouter la colonne en nullable
+        2. remplir les lignes existantes
+        3. poser la contrainte NOT NULL
+    -->
+    <changeSet id="004-add-location-to-events" author="cyrine">
+        <addColumn tableName="events">
+            <column name="location" type="varchar(255)"/>
+        </addColumn>
+
+        <update tableName="events">
+            <column name="location" value="À définir"/>
+            <where>location IS NULL</where>
+        </update>
+
+        <addNotNullConstraint tableName="events" columnName="location" columnDataType="varchar(255)"/>
+
+        <rollback>
+            <dropColumn tableName="events" columnName="location"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

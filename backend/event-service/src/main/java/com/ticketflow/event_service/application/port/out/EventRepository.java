@@ -12,4 +12,5 @@ public interface EventRepository {
     Event save(Event event);
     Optional<Event> findById(UUID id);
     List<Event> findAll();
+    List<Event> search(String title, String location, boolean availableOnly);
 }

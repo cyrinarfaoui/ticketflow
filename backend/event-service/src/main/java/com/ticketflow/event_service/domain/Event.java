@@ -11,13 +11,17 @@ public class Event {
     private final UUID id;
     private final String title;
     private final String description;
+    private final String location;
     private final LocalDateTime date;
     private final int totalSeats;
     private int availableSeats;
 
-    public Event(UUID id, String title, String description, LocalDateTime date, int totalSeats) {
+    public Event(UUID id, String title, String description, String location, LocalDateTime date, int totalSeats) {
         if (title == null || title.isBlank()) {
             throw new IllegalArgumentException("Le titre de l'événement ne peut pas être vide");
+        }
+        if (location == null || location.isBlank()) {
+            throw new IllegalArgumentException("Le lieu de l'événement est obligatoire");
         }
         if (date == null) {
             throw new IllegalArgumentException("La date de l'événement est obligatoire");
@@ -29,6 +33,7 @@ public class Event {
         this.id = id;
         this.title = title;
         this.description = description;
+        this.location = location;
         this.date = date;
         this.totalSeats = totalSeats;
         this.availableSeats = totalSeats;

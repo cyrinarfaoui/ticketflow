@@ -19,13 +19,18 @@ public class EventService {
         this.eventRepository = eventRepository ;
     }
 
-    public Event createEvent(String title, String description, LocalDateTime date, int totalSeats) {
-        Event event = new Event(UUID.randomUUID(), title, description, date, totalSeats);
+    public Event createEvent(String title, String description, String location, LocalDateTime date, int totalSeats) {
+        Event event = new Event(UUID.randomUUID(), title, description, location, date, totalSeats);
         return eventRepository.save(event);
     }
 
-    public List<Event> listEvents() {
-        return eventRepository.findAll();
+    public List<Event> listEvents(String title, String location, boolean availableOnly) {
+        return eventRepository.search(blankToNull(title), blankToNull(location), availableOnly);
+    }
+
+    // "?location=" (champ vide cote front) doit se comporter comme "pas de filtre"
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     public Event getEvent(UUID id) {

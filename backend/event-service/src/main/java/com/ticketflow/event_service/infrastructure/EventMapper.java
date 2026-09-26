@@ -9,6 +9,7 @@ public class EventMapper {
                 event.getId(),
                 event.getTitle(),
                 event.getDescription(),
+                event.getLocation(),
                 event.getDate(),
                 event.getTotalSeats(),
                 event.getAvailableSeats()
@@ -21,6 +22,7 @@ public class EventMapper {
                 entity.getId(),
                 entity.getTitle(),
                 entity.getDescription(),
+                entity.getLocation(),
                 entity.getDate(),
                 entity.getTotalSeats()
         );

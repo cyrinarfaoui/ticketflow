@@ -3,6 +3,7 @@ package com.ticketflow.event_service.infrastructure.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -23,7 +24,9 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/events/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/events").hasRole("ADMIN")
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/events/*/book").hasRole("ADMIN")

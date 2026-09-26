@@ -3,27 +3,12 @@
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <changeSet id="001-create-events-table" author="cyrine">
-        <createTable tableName="events">
-            <column name="id" type="uuid">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="title" type="varchar(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="description" type="text"/>
-            <column name="event_date" type="timestamp">
-                <constraints nullable="false"/>
-            </column>
-            <column name="total_seats" type="int">
-                <constraints nullable="false"/>
-            </column>
-            <column name="available_seats" type="int">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-    </changeSet>
+    <!-- Un fichier par evolution, prefixe numerique, jamais modifie une fois deploye -->
+    <include file="changes/001-create-events-table.xml" relativeToChangelogFile="true"/>
+    <include file="changes/002-create-reservations-table.xml" relativeToChangelogFile="true"/>
+    <include file="changes/003-index-reservations-status-created-at.xml" relativeToChangelogFile="true"/>
+    <include file="changes/004-add-location-to-events.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

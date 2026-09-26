@@ -43,6 +43,17 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
 
 
+  ticketflow-web:
+    build: ../frontend/ticketflow-web
+    container_name: ticketflow-web
+    volumes:
+      - ../frontend/ticketflow-web:/app
+      - /app/node_modules
+    ports:
+      - "4200:4200"
+    depends_on:
+      - event-service
+      - keycloak
 
   event-service:
     build: ../backend/event-service

@@ -9,6 +9,7 @@ public record EventResponse(
         UUID id,
         String title,
         String description,
+        String location,
         LocalDateTime date,
         int totalSeats,
         int availableSeats
@@ -16,7 +17,7 @@ public record EventResponse(
 
     public static EventResponse from(Event event) {
         return new EventResponse(
-                event.getId(), event.getTitle(), event.getDescription(),
+                event.getId(), event.getTitle(), event.getDescription(), event.getLocation(),
                 event.getDate(), event.getTotalSeats(), event.getAvailableSeats()
         );
     }

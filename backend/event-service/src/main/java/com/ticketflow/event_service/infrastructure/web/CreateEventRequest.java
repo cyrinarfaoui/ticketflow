@@ -11,6 +11,7 @@ public record CreateEventRequest(
 
         @NotBlank String title,
         String description,
+        @NotBlank String location,
         @NotNull @Future LocalDateTime date,
         @Positive int totalSeats
 

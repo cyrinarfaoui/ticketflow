@@ -16,6 +16,7 @@ public class EventTest {
                 UUID.randomUUID(),
                 "Concert de jazz",
                 "Une soirée jazz au théâtre municipal",
+                "Théâtre municipal, Tunis",
                 LocalDateTime.now().plusDays(30),
                 100
         );
@@ -30,6 +31,7 @@ public class EventTest {
                 UUID.randomUUID(),
                 "Concert de jazz",
                 "Description",
+                "Théâtre municipal, Tunis",
                 LocalDateTime.now().plusDays(30),
                 0
         )).isInstanceOf(IllegalArgumentException.class)
@@ -42,6 +44,7 @@ public class EventTest {
                 UUID.randomUUID(),
                 "Concert de jazz",
                 "Description",
+                "Théâtre municipal, Tunis",
                 LocalDateTime.now().plusDays(30),
                 -5
         )).isInstanceOf(IllegalArgumentException.class);
@@ -53,10 +56,24 @@ public class EventTest {
                 UUID.randomUUID(),
                 "  ",
                 "Description",
+                "Théâtre municipal, Tunis",
                 LocalDateTime.now().plusDays(30),
                 50
         )).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("titre");
+    }
+
+    @Test
+    void should_throw_exception_when_location_is_blank() {
+        assertThatThrownBy(() -> new Event(
+                UUID.randomUUID(),
+                "Concert de jazz",
+                "Description",
+                "  ",
+                LocalDateTime.now().plusDays(30),
+                50
+        )).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("lieu");
     }
 
 
@@ -66,6 +83,7 @@ public class EventTest {
                 UUID.randomUUID(),
                 "Concert de jazz",
                 "Description",
+                "Théâtre municipal, Tunis",
                 LocalDateTime.now().plusDays(30),
                 100
         );
@@ -81,6 +99,7 @@ public class EventTest {
                 UUID.randomUUID(),
                 "Concert de jazz",
                 "Description",
+                "Théâtre municipal, Tunis",
                 LocalDateTime.now().plusDays(30),
                 5
         );
@@ -96,6 +115,7 @@ public class EventTest {
                 UUID.randomUUID(),
                 "Concert de jazz",
                 "Description",
+                "Théâtre municipal, Tunis",
                 LocalDateTime.now().plusDays(30),
                 100
         );

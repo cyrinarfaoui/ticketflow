@@ -27,6 +27,9 @@ public class EventEntity {
 
     private String description;
 
+    @Column(nullable = false)
+    private String location;
+
     @Column(name = "event_date", nullable = false)
     private LocalDateTime date;
 

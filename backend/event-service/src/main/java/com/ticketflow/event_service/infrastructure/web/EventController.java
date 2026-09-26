@@ -27,14 +27,17 @@ public class EventController {
     @PostMapping
     public ResponseEntity<EventResponse> createEvent(@Valid @RequestBody CreateEventRequest request) {
         var event = eventService.createEvent(
-                request.title(), request.description(), request.date(), request.totalSeats()
+                request.title(), request.description(), request.location(), request.date(), request.totalSeats()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(EventResponse.from(event));
     }
 
     @GetMapping
-    public List<EventResponse> listEvents() {
-        return eventService.listEvents().stream().map(EventResponse::from).toList();
+    public List<EventResponse> listEvents(
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false, defaultValue = "false") boolean availableOnly) {
+        return eventService.listEvents(title, location, availableOnly).stream().map(EventResponse::from).toList();
     }
 
     @GetMapping("/{id}")

@@ -32,4 +32,9 @@ public class EventRepositoryAdapter implements EventRepository {
     public List<Event> findAll() {
         return jpaRepository.findAll().stream().map(EventMapper::toDomain).toList();
     }
+
+    @Override
+    public List<Event> search(String title, String location, boolean availableOnly) {
+        return jpaRepository.search(title, location, availableOnly).stream().map(EventMapper::toDomain).toList();
+    }
 }

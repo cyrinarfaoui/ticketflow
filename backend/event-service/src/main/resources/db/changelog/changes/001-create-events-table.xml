@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="001-create-events-table" author="cyrine">
+        <!-- Table deja creee par Hibernate (ddl-auto=update) sur les bases existantes : on la marque comme appliquee -->
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="events"/>
+            </not>
+        </preConditions>
+        <createTable tableName="events">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="title" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="text"/>
+            <column name="event_date" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total_seats" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="available_seats" type="int">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>
