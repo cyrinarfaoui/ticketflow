@@ -17,6 +17,14 @@
     </div>
 
     <div class="field">
+      <label for="location">Lieu</label>
+      <input id="location" type="text" formControlName="location" placeholder="Ex. Théâtre municipal, Tunis" />
+      @if (form.controls.location.invalid && form.controls.location.touched) {
+        <p class="error" role="alert">Le lieu est obligatoire.</p>
+      }
+    </div>
+
+    <div class="field">
       <label for="date">Date et heure</label>
       <input id="date" type="datetime-local" formControlName="date" />
       @if (form.controls.date.invalid && form.controls.date.touched) {

@@ -17,6 +17,7 @@ export class EventForm {
   form = this.fb.group({
     title: ['', [Validators.required, Validators.minLength(3)]],
     description: [''],
+    location: ['', Validators.required],
     date: ['', Validators.required],
     totalSeats: [1, [Validators.required, Validators.min(1)]]
   });
@@ -31,6 +32,7 @@ export class EventForm {
     this.eventService.createEvent({
       title: raw.title!,
       description: raw.description ?? '',
+      location: raw.location!,
       date: new Date(raw.date!).toISOString(),
       totalSeats: raw.totalSeats!
     }).subscribe({
