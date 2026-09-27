@@ -1,5 +1,6 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { EventResponse } from '../../../core/services/event.service';
+import { DatePipe } from '@angular/common';
 
 
 // Les 3 états possibles d'un événement
@@ -7,7 +8,7 @@ type SeatsStatus = 'available' | 'few' | 'full';
 
 
 @Component({
-  imports: [],
+  imports: [DatePipe],
   selector: 'app-event-card',
   styleUrl: './event-card.scss',
   templateUrl: './event-card.html',

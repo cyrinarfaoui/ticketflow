@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { LOCALE_ID } from '@angular/core';
+import { registerLocaleData } from '@angular/common';
+import localeFr from '@angular/common/locales/fr';
 import { EventCard } from './event-card';
 import { EventResponse } from '../../../core/services/event.service';
 
@@ -21,15 +24,24 @@ describe('EventCard', () => {
   let component: EventCard;
   let element: HTMLElement;
 
+  // Charge une seule fois les données françaises (mois, jours…)
+  beforeAll(() => registerLocaleData(localeFr));
+
   // Donne un événement à la carte puis met à jour le HTML
   function render(event: EventResponse): void {
     fixture.componentRef.setInput('event', event);
     fixture.detectChanges();
   }
 
+  // Texte d'un élément, sans les espaces autour
+  function text(selector: string): string | undefined {
+    return element.querySelector(selector)?.textContent?.trim();
+  }
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [EventCard],
+      providers: [{ provide: LOCALE_ID, useValue: 'fr' }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(EventCard);
@@ -97,6 +109,28 @@ describe('EventCard', () => {
 
       // Assert
       expect(emitted).toBe(3);
+    });
+  });
+
+  describe('date', () => {
+
+    beforeEach(() => render(createEvent({ date: '2026-12-15T20:00:00' })));
+
+    it('affiche le jour et le mois abrégé en français dans le badge', () => {
+      expect(text('.date-badge__day')).toBe('15');
+      expect(text('.date-badge__month')).toBe('déc.');
+    });
+
+    it('affiche le jour de la semaine et l\'heure', () => {
+      expect(text('.event-time')).toBe('mar. 20:00');
+    });
+
+    it('donne la date complète aux lecteurs d\'écran', () => {
+      expect(text('.date-badge .visually-hidden')).toBe('mardi 15 décembre 2026 à 20:00');
+    });
+
+    it('fournit la date au format machine dans l\'attribut datetime', () => {
+      expect(element.querySelector('time')?.getAttribute('datetime')).toBe('2026-12-15T20:00:00');
     });
   });
 });
