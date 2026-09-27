@@ -1,10 +1,9 @@
 import { Component, signal ,inject} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { EventList } from './features/events/event-list/event-list';
 import { AuthService } from './core/services/auth.service';
 
 @Component({
-  imports: [RouterOutlet,EventList],
+  imports: [RouterOutlet],
   selector: 'app-root',
   styleUrl: './app.scss',
   templateUrl: './app.html',
