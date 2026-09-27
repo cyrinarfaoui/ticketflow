@@ -69,8 +69,12 @@
           },
           "defaultConfiguration": "development"
         },
-        "test": {
-          "builder": "@angular/build:unit-test"
+               "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "runner": "karma",
+            "browsers": ["Chrome"]
+          }
         }
       }
     }

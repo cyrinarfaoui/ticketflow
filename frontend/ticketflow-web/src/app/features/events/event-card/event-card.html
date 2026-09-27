@@ -1,0 +1,54 @@
+@let e = event();
+
+<article class="event-card">
+   <header class="event-card__header">
+    <time class="date-badge" [attr.datetime]="e.date">
+      <span class="date-badge__month" aria-hidden="true">{{ e.date | date: 'MMM' }}</span>
+      <span class="date-badge__day" aria-hidden="true">{{ e.date | date: 'dd' }}</span>
+      <span class="visually-hidden">{{ e.date | date: 'EEEE d MMMM y' }} à {{ e.date | date: 'HH:mm' }}</span>
+    </time>
+
+    <div>
+      <h3>{{ e.title }}</h3>
+      <p class="event-location">{{ e.location }}</p>
+      <p class="event-time">{{ e.date | date: 'EEE HH:mm' }}</p>
+    </div>
+  </header>
+    <p class="event-description">{{ e.description }}</p>
+
+  <div class="gauge" aria-hidden="true">
+    <div
+      class="gauge__fill"
+      [attr.data-status]="status()"
+      [style.width.%]="fillPercent()"
+    ></div>
+  </div>
+
+  @switch (status()) {
+    @case ('full') {
+      <p class="seats-label seats-label--full">Complet</p>
+    }
+    @case ('few') {
+      <p class="seats-label seats-label--few">Plus que {{ e.availableSeats }} places</p>
+    }
+    @default {
+      <p class="seats-label">{{ e.availableSeats }} places restantes sur {{ e.totalSeats }}</p>
+    }
+  }
+
+   @if (bookable() && status() !== 'full') {
+    <div class="reserve-row">
+      <label [for]="'seats-' + e.id">Places</label>
+      <input
+        #seatsInput
+        [id]="'seats-' + e.id"
+        type="number"
+        min="1"
+        [max]="e.availableSeats"
+        [value]="seats()"
+        (input)="onSeatsChange(seatsInput.value)"
+      />
+      <button type="button" (click)="onReserve()">Réserver</button>
+    </div>
+  }
+</article>

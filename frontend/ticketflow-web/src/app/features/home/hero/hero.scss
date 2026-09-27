@@ -1,0 +1,91 @@
+.hero {
+  margin-bottom: 2.5rem;
+  padding: 2.5rem 2rem;
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  background-color: #eff6ff;
+
+  h1 {
+    margin: 0 0 0.5rem;
+    font-size: 2.25rem;
+    line-height: 1.2;
+    color: #0f172a;
+  }
+}
+
+.hero__subtitle {
+  margin: 0 0 1.5rem;
+  font-size: 1.125rem;
+  color: #475569;
+}
+
+.hero__greeting {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.hero__button {
+  display: inline-block;
+  padding: 0.7rem 1.4rem;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+
+  &--primary {
+    background-color: var(--color-primary);
+    color: #ffffff;
+    border: 2px solid var(--color-primary);
+
+    &:hover {
+      background-color: var(--color-primary-dark);
+      border-color: var(--color-primary-dark);
+    }
+  }
+
+  &--secondary {
+    background-color: #ffffff;
+    color: #1d4ed8;
+    border: 2px solid var(--color-primary);
+
+    &:hover {
+      background-color: #dbeafe;
+    }
+  }
+
+  &:focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 2px;
+  }
+}
+
+.hero__link {
+  color: #1d4ed8;
+  font-weight: 500;
+
+  &:focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 2px;
+  }
+}
+
+// Sur téléphone : titre plus petit, moins de marge intérieure
+@media (max-width: 640px) {
+  .hero {
+    padding: 1.75rem 1.25rem;
+
+    h1 {
+      font-size: 1.75rem;
+    }
+  }
+}

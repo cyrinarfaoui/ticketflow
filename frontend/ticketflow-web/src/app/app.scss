@@ -1,16 +1,51 @@
 .app-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 1rem;
+  gap: 1rem 2rem;
   padding: 1rem 1.5rem;
   background-color: #1f2937;
-  color: white;
+  color: #ffffff;
+}
 
-  .app-title {
-    font-weight: 700;
-    font-size: 1.2rem;
-    margin-right: auto;
+// ---------- Logo : lien vers l'accueil ----------
+.app-logo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+// ---------- Navigation principale ----------
+.app-nav {
+  display: flex;
+  gap: 1.5rem;
+  margin-right: auto;   // pousse la zone de connexion tout à droite
+
+  a {
+    padding: 0.25rem 0;
+    color: #d1d5db;
+    font-weight: 500;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+
+    &:hover {
+      color: #ffffff;
+    }
+
+    // La page actuelle : texte blanc + soulignement bleu
+    &.is-active {
+      color: #ffffff;
+      border-bottom-color: #60a5fa;
+    }
   }
+}
+
+// ---------- Connexion / inscription ----------
+.app-auth {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 
   .user-info {
     font-size: 0.9rem;
@@ -19,14 +54,22 @@
   button {
     padding: 0.5rem 1rem;
     background-color: var(--color-primary);
-    color: white;
+    color: #ffffff;
     border: none;
     border-radius: 6px;
     cursor: pointer;
+    font: inherit;
     font-weight: 600;
 
     &:hover {
       background-color: var(--color-primary-dark);
     }
   }
+}
+
+// Contour visible au clavier pour tous les liens et boutons du header
+.app-header a:focus-visible,
+.app-header button:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 3px;
 }
