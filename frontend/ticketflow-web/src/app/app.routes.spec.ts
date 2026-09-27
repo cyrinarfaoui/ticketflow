@@ -6,6 +6,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { AuthService } from './core/services/auth.service';
 import { EventForm } from './features/events/event-form/event-form';
 import { routes } from './app.routes';
+import { HomePage } from './features/home/home-page/home-page';
 
 describe('Routes de l\'application (sécurité)', () => {
   let authService: jasmine.SpyObj<AuthService>;
@@ -52,5 +53,13 @@ describe('Routes de l\'application (sécurité)', () => {
 
     expect(TestBed.inject(Router).url).toBe('/events/new');
     expect(page).toBeInstanceOf(EventForm);
+  });
+
+  it('affiche la page d\'accueil à la racine du site', async () => {
+    const harness = await RouterTestingHarness.create();
+
+    const page = await harness.navigateByUrl('/', HomePage);
+
+    expect(page).toBeInstanceOf(HomePage);
   });
 });
