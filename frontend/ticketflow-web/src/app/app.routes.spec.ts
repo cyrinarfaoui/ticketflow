@@ -12,7 +12,9 @@ describe('Routes de l\'application (sécurité)', () => {
   let authService: jasmine.SpyObj<AuthService>;
 
   beforeEach(() => {
-    authService = jasmine.createSpyObj<AuthService>('AuthService', ['isLoggedIn', 'hasRole']);
+       authService = jasmine.createSpyObj<AuthService>('AuthService', [
+      'isLoggedIn', 'hasRole', 'getUsername', 'login', 'register',
+    ]);
 
     TestBed.configureTestingModule({
       providers: [

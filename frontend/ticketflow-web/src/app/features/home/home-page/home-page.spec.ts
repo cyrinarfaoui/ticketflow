@@ -37,4 +37,15 @@ describe('HomePage', () => {
     expect(section?.querySelector('h2')?.textContent?.trim()).toBe('Tous les événements');
     expect(section?.querySelector('app-event-list')).not.toBeNull();
   });
+
+    it('affiche le hero en haut de la page', () => {
+    const main = element.querySelector('main');
+
+    expect(main?.firstElementChild?.tagName).toBe('APP-HERO');
+  });
+
+    it('n\'affiche la liste des événements qu\'une seule fois', () => {
+    expect(element.querySelectorAll('app-event-list').length).toBe(1);
+    expect(element.querySelectorAll('#evenements').length).toBe(1);
+  });
 });
