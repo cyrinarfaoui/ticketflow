@@ -15,6 +15,8 @@ type SeatsStatus = 'available' | 'few' | 'full';
 })
 export class EventCard {
 
+// OPTION : afficher ou non la zone de réservation (true par défaut)
+readonly bookable = input(true);
    // ENTRÉE : le parent nous donne l'événement à afficher
 readonly event = input.required<EventResponse>();
 

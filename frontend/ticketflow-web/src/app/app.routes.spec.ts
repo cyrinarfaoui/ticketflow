@@ -7,6 +7,7 @@ import { AuthService } from './core/services/auth.service';
 import { EventForm } from './features/events/event-form/event-form';
 import { routes } from './app.routes';
 import { HomePage } from './features/home/home-page/home-page';
+import { EventsPage } from './features/events/events-page/events-page';
 
 describe('Routes de l\'application (sécurité)', () => {
   let authService: jasmine.SpyObj<AuthService>;
@@ -63,5 +64,13 @@ describe('Routes de l\'application (sécurité)', () => {
     const page = await harness.navigateByUrl('/', HomePage);
 
     expect(page).toBeInstanceOf(HomePage);
+  });
+
+    it('affiche le catalogue des événements sur /evenements', async () => {
+    const harness = await RouterTestingHarness.create();
+
+    const page = await harness.navigateByUrl('/evenements', EventsPage);
+
+    expect(page).toBeInstanceOf(EventsPage);
   });
 });

@@ -5,7 +5,7 @@
   @if (authService.isLoggedIn()) {
     <p class="hero__greeting">Bonjour {{ authService.getUsername() }}</p>
     <div class="hero__actions">
-      <a class="hero__button hero__button--primary" href="#evenements">Voir les événements</a>
+           <a class="hero__button hero__button--primary" routerLink="/evenements">Voir les événements</a>
     </div>
   } @else {
     <div class="hero__actions">
@@ -16,6 +16,6 @@
         Se connecter
       </button>
     </div>
-    <a class="hero__link" href="#evenements">Parcourir les événements sans compte</a>
+       <a class="hero__link" routerLink="/evenements">Parcourir les événements sans compte</a>
   }
 </section>

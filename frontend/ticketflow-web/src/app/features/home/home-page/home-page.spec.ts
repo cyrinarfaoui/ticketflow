@@ -31,21 +31,20 @@ describe('HomePage', () => {
     expect(element.querySelectorAll('main').length).toBe(1);
   });
 
-  it('contient la section "Tous les événements" avec la liste', () => {
-    const section = element.querySelector('section#evenements');
-
-    expect(section?.querySelector('h2')?.textContent?.trim()).toBe('Tous les événements');
-    expect(section?.querySelector('app-event-list')).not.toBeNull();
+  it('ne contient plus la liste complète des événements (elle est sur /evenements)', () => {
+    expect(element.querySelector('app-event-list')).toBeNull();
   });
 
-    it('affiche le hero en haut de la page', () => {
+  it('affiche le hero en haut de la page', () => {
     const main = element.querySelector('main');
 
     expect(main?.firstElementChild?.tagName).toBe('APP-HERO');
   });
 
-    it('n\'affiche la liste des événements qu\'une seule fois', () => {
-    expect(element.querySelectorAll('app-event-list').length).toBe(1);
-    expect(element.querySelectorAll('#evenements').length).toBe(1);
+ 
+    it('affiche "À la une" juste après le hero', () => {
+    const main = element.querySelector('main');
+
+    expect(main?.children[1]?.tagName).toBe('APP-FEATURED-EVENTS');
   });
 });

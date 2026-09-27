@@ -36,7 +36,7 @@
     }
   }
 
-  @if (status() !== 'full') {
+   @if (bookable() && status() !== 'full') {
     <div class="reserve-row">
       <label [for]="'seats-' + e.id">Places</label>
       <input

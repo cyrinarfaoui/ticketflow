@@ -51,6 +51,13 @@ describe('EventCard', () => {
 
   describe('logique (computed)', () => {
 
+    it('cache la zone de réservation quand la carte n\'est pas réservable', () => {
+      fixture.componentRef.setInput('bookable', false);
+      render(createEvent());
+
+      expect(element.querySelector('.reserve-row')).toBeNull();
+    });
+
     it('calcule le pourcentage de places restantes', () => {
       render(createEvent({ totalSeats: 100, availableSeats: 53 }));
 

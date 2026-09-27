@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
-import { EventList } from '../../events/event-list/event-list';
 import { Hero } from '../hero/hero';
+import { FeaturedEvents } from '../featured-events/featured-events';
 
 @Component({
-  imports: [EventList,Hero],
   selector: 'app-home-page',
-  styleUrl: './home-page.scss',
+  imports: [Hero, FeaturedEvents],
   templateUrl: './home-page.html',
+  styleUrl: './home-page.scss',
 })
 export class HomePage {}

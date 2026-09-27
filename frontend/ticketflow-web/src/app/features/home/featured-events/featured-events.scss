@@ -1,0 +1,39 @@
+.featured {
+  margin-bottom: 2.5rem;
+}
+
+.featured__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+
+  h2 {
+    margin: 0;
+  }
+}
+
+.featured__all {
+  color: #1d4ed8;
+  font-weight: 600;
+
+  &:focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 2px;
+  }
+}
+
+.featured__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.featured__status {
+  color: #4b5563;
+}

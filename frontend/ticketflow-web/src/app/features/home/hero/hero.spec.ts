@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { Hero } from './hero';
 import { AuthService } from '../../../core/services/auth.service';
 
@@ -14,7 +15,10 @@ describe('Hero', () => {
 
     await TestBed.configureTestingModule({
       imports: [Hero],
-      providers: [{ provide: AuthService, useValue: authService }],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: authService },
+      ],
     }).compileComponents();
   });
 
@@ -61,7 +65,7 @@ describe('Hero', () => {
     });
 
     it('propose de parcourir les événements sans compte', () => {
-      expect(link('Parcourir les événements sans compte')?.getAttribute('href')).toBe('#evenements');
+      expect(link('Parcourir les événements sans compte')?.getAttribute('href')).toBe('/evenements');
     });
   });
 
@@ -71,7 +75,7 @@ describe('Hero', () => {
 
     it('le salue par son nom et l\'envoie vers les événements', () => {
       expect(element.querySelector('.hero__greeting')?.textContent?.trim()).toBe('Bonjour cyrine');
-      expect(link('Voir les événements')?.getAttribute('href')).toBe('#evenements');
+      expect(link('Voir les événements')?.getAttribute('href')).toBe('/evenements');
     });
 
     it('ne lui propose plus de créer un compte ni de se connecter', () => {
