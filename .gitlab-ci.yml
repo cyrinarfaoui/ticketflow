@@ -131,6 +131,7 @@ test:event-service:
     POSTGRES_USER: ticketflow
     POSTGRES_PASSWORD: ticketflow
     SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/eventdb
+    SPRING_DATASOURCE_PASSWORD: $POSTGRES_PASSWORD
   services:
     - name: postgres:16
       alias: postgres
