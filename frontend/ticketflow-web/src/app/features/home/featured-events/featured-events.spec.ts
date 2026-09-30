@@ -108,6 +108,6 @@ describe('FeaturedEvents', () => {
 
     const link = element.querySelector<HTMLAnchorElement>('.featured__all');
     expect(link?.textContent?.trim()).toBe('Voir tous les événements');
-    expect(link?.getAttribute('href')).toBe('#evenements');
+    expect(link?.getAttribute('href')).toBe('/evenements');
   });
 });

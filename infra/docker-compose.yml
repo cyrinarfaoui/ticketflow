@@ -44,7 +44,9 @@ services:
 
 
   ticketflow-web:
-    build: ../frontend/ticketflow-web
+    build:
+      context: ../frontend/ticketflow-web
+      dockerfile: Dockerfile.dev
     container_name: ticketflow-web
     volumes:
       - ../frontend/ticketflow-web:/app

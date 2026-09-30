@@ -1,0 +1,194 @@
+# =====================================================================
+#  Pipeline CI/CD TicketFlow — toute l'application
+#  build → test → quality → package   (deploy Kubernetes : plus tard)
+#
+#  Variables à définir dans GitLab (Settings > CI/CD > Variables) :
+#    SONAR_TOKEN     (Masked, NON Protected) : token SonarCloud
+#    SONAR_HOST_URL  https://sonarcloud.io
+# =====================================================================
+
+stages:
+  - build
+  - test
+  - quality
+  - package
+
+# Quand lancer la pipeline : sur chaque Merge Request et sur main
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+variables:
+  FRONT_DIR: frontend/ticketflow-web
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  MAVEN_CLI_OPTS: "-B --no-transfer-progress"
+
+# =====================================================================
+#  FRONTEND (Angular)
+# =====================================================================
+
+# Modèle commun aux jobs frontend (le "." = job caché, non exécuté)
+.frontend:
+  image: node:24
+  cache:
+    key:
+      files:
+        - frontend/ticketflow-web/package-lock.json
+    paths:
+      - frontend/ticketflow-web/.npm/
+  before_script:
+    - cd $FRONT_DIR
+    - npm ci --cache .npm --prefer-offline --no-audit --no-fund
+
+build:frontend:
+  extends: .frontend
+  stage: build
+  script:
+    - npx ng build
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - $FRONT_DIR/dist/
+
+test:frontend:
+  extends: .frontend
+  stage: test
+  variables:
+    CHROME_BIN: /usr/bin/chromium
+  script:
+    - apt-get update -qq
+    - apt-get install -y -qq chromium > /dev/null
+    - npx ng test --watch=false --browsers=ChromeHeadlessCI --coverage
+    # Chemins du rapport lcov rendus relatifs à la racine du dépôt (attendu par Sonar)
+    - sed -i -E '/^SF:(\/|frontend\/)/! s#^SF:#SF:frontend/ticketflow-web/#' coverage/ticketflow-web/lcov.info
+  artifacts:
+    when: always
+    expire_in: 1 day
+    paths:
+      - $FRONT_DIR/coverage/
+
+# =====================================================================
+#  BACKEND (Spring Boot 4 / Java 25)
+# =====================================================================
+
+# Modèle commun aux jobs backend
+.backend:
+  image: maven:3.9-eclipse-temurin-25
+  cache:
+    key: maven-repo
+    paths:
+      - .m2/repository
+  before_script:
+    - cd backend/$SERVICE
+
+# Compile et package les 3 services en parallèle (un job par service)
+build:backend:
+  extends: .backend
+  stage: build
+  parallel:
+    matrix:
+      - SERVICE: [auth-service, event-service, notification-service]
+  script:
+    - mvn $MAVEN_CLI_OPTS -DskipTests package
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - backend/$SERVICE/target/*.jar
+
+# Modèle commun aux tests backend (tests + rapport de couverture JaCoCo)
+.backend-test:
+  extends: .backend
+  stage: test
+  script:
+    - mvn $MAVEN_CLI_OPTS verify
+  artifacts:
+    when: always
+    expire_in: 1 day
+    paths:
+      - backend/$SERVICE/target/classes
+      - backend/$SERVICE/target/surefire-reports/
+      - backend/$SERVICE/target/site/jacoco/jacoco.xml
+    reports:
+      junit: backend/$SERVICE/target/surefire-reports/TEST-*.xml
+
+test:auth-service:
+  extends: .backend-test
+  variables:
+    SERVICE: auth-service
+
+test:notification-service:
+  extends: .backend-test
+  variables:
+    SERVICE: notification-service
+
+# event-service démarre Liquibase au lancement : il lui faut une vraie base Postgres
+test:event-service:
+  extends: .backend-test
+  variables:
+    SERVICE: event-service
+    POSTGRES_DB: eventdb
+    POSTGRES_USER: ticketflow
+    POSTGRES_PASSWORD: ticketflow
+    SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/eventdb
+    SPRING_DATASOURCE_PASSWORD: $POSTGRES_PASSWORD
+  services:
+    - name: postgres:16
+      alias: postgres
+
+# =====================================================================
+#  QUALITY : analyse SonarCloud + Quality Gate bloquante
+# =====================================================================
+
+sonarcloud:
+  stage: quality
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
+  needs:
+    - test:frontend
+    - test:auth-service
+    - test:event-service
+    - test:notification-service
+  variables:
+    SONAR_USER_HOME: "$CI_PROJECT_DIR/.sonar"
+    GIT_DEPTH: "0"
+  cache:
+    key: sonar-cache
+    paths:
+      - .sonar/cache
+  script:
+    - sonar-scanner -Dsonar.qualitygate.wait=true
+
+# =====================================================================
+#  PACKAGE : images Docker -> GitLab Container Registry
+#   - sur une Merge Request : on CONSTRUIT seulement (vérifie les Dockerfile)
+#   - sur main              : on construit ET on PUBLIE (tag = SHA du commit + latest)
+# =====================================================================
+
+package:
+  stage: package
+  image: docker:28
+  services:
+    - docker:28-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  parallel:
+    matrix:
+      - APP: [auth-service, event-service, notification-service]
+        CONTEXT: backend
+      - APP: ticketflow-web
+        CONTEXT: frontend
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+  script:
+    - IMAGE="$CI_REGISTRY_IMAGE/$APP"
+    - docker build -t "$IMAGE:$CI_COMMIT_SHORT_SHA" "$CONTEXT/$APP"
+    - |
+      if [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ]; then
+        docker tag "$IMAGE:$CI_COMMIT_SHORT_SHA" "$IMAGE:latest"
+        docker push "$IMAGE:$CI_COMMIT_SHORT_SHA"
+        docker push "$IMAGE:latest"
+      else
+        echo "Merge Request : image construite, non publiée."
+      fi
