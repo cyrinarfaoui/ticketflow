@@ -1,0 +1,38 @@
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid transparent;
+
+  &--error {
+    background-color: #fef2f2;
+    border-bottom-color: #fecaca;
+    color: #991b1b;
+  }
+}
+
+.banner__text {
+  flex: 1;
+  margin: 0;
+  font-weight: 500;
+}
+
+.banner__close {
+  padding: 0.25rem 0.5rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #fee2e2;
+  }
+
+  &:focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 2px;
+  }
+}

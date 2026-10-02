@@ -5,6 +5,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { createInterceptorCondition, INCLUDE_BEARER_TOKEN_INTERCEPTOR_CONFIG, includeBearerTokenInterceptor, provideKeycloak } from 'keycloak-angular';
 import { registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
+import { errorInterceptor } from './core/interceptors/error-interceptor';
 
 const urlCondition = createInterceptorCondition({
   urlPattern: /^(http:\/\/localhost:8080|http:\/\/localhost:8082)(\/.*)?$/i,
@@ -17,7 +18,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([includeBearerTokenInterceptor])),
+    provideHttpClient(withInterceptors([includeBearerTokenInterceptor, errorInterceptor])),
     provideKeycloak({
       config: {
         url: 'http://localhost:8081',

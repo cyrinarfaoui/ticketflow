@@ -66,6 +66,12 @@ describe('App', () => {
 
   describe('navigation', () => {
 
+     it('affiche la bannière de notification juste sous le header, sur toutes les pages', async () => {
+      const element = await renderAt('/evenements');
+
+      expect(element.querySelector('header + app-notification-banner')).not.toBeNull();
+    });
+
     it('le logo ramène à l\'accueil', async () => {
       const element = await renderAt('/evenements');
 
