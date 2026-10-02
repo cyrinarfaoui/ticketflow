@@ -131,7 +131,7 @@ describe('EventList (intégration)', () => {
       httpMock.expectOne(`${API_BASE_URL}/events`).flush(EVENTS);
     });
 
-    it('affiche "Connectez-vous" quand l\'API répond 401', () => {
+       it('laisse le 401 à la bannière globale : aucun message dans la liste', () => {
       loadPage();
 
       element.querySelector<HTMLButtonElement>('app-event-card button')!.click();
@@ -140,7 +140,19 @@ describe('EventList (intégration)', () => {
         .flush(null, { status: 401, statusText: 'Unauthorized' });
       fixture.detectChanges();
 
-      expect(element.querySelector('[role="alert"]')?.textContent).toContain('Connectez-vous');
+      expect(element.querySelector('[role="alert"]')).toBeNull();
+    });
+
+    it('affiche le message métier renvoyé par l\'API (409)', () => {
+      loadPage();
+
+      element.querySelector<HTMLButtonElement>('app-event-card button')!.click();
+      httpMock
+        .expectOne(`${API_BASE_URL}/reservations?eventId=1`)
+        .flush({ error: 'Pas assez de places disponibles' }, { status: 409, statusText: 'Conflict' });
+      fixture.detectChanges();
+
+      expect(element.querySelector('[role="alert"]')?.textContent).toContain('Pas assez de places disponibles');
     });
   });
 });

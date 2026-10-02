@@ -1,0 +1,11 @@
+@if (notifications.notification(); as notification) {
+  <div class="banner" [class.banner--error]="notification.type === 'error'" role="alert">
+    <p class="banner__text">{{ notification.text }}</p>
+    <button
+      type="button"
+      class="banner__close"
+      aria-label="Fermer le message"
+      (click)="notifications.clear()"
+    >✕</button>
+  </div>
+}
