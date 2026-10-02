@@ -15,10 +15,11 @@ public class ReservationMapper {
 
     public static Reservation toDomain(ReservationEntity entity) {
         Reservation reservation = new Reservation(entity.getId(), entity.getEventId(), entity.getSeats());
-        if (entity.getStatus() == com.ticketflow.event_service.domain.ReservationStatus.CONFIRMED) {
-            reservation.confirm();
-        } else if (entity.getStatus() == com.ticketflow.event_service.domain.ReservationStatus.CANCELLED) {
-            reservation.cancel();
+        switch (entity.getStatus()) {
+            case CONFIRMED -> reservation.confirm();
+            case CANCELLED -> reservation.cancel();
+            case EXPIRED -> reservation.expire();
+            case PENDING -> { /* état initial : rien à faire */ }
         }
         return reservation;
     }
