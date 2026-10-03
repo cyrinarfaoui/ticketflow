@@ -17,6 +17,7 @@ public class EventTest {
                 "Concert de jazz",
                 "Une soirée jazz au théâtre municipal",
                 "Théâtre municipal, Tunis",
+                EventCategory.CONCERT,
                 LocalDateTime.now().plusDays(30),
                 100
         );
@@ -32,6 +33,7 @@ public class EventTest {
                 "Concert de jazz",
                 "Description",
                 "Théâtre municipal, Tunis",
+                EventCategory.CONCERT,
                 LocalDateTime.now().plusDays(30),
                 0
         )).isInstanceOf(IllegalArgumentException.class)
@@ -45,6 +47,7 @@ public class EventTest {
                 "Concert de jazz",
                 "Description",
                 "Théâtre municipal, Tunis",
+                EventCategory.CONCERT,
                 LocalDateTime.now().plusDays(30),
                 -5
         )).isInstanceOf(IllegalArgumentException.class);
@@ -57,6 +60,7 @@ public class EventTest {
                 "  ",
                 "Description",
                 "Théâtre municipal, Tunis",
+                EventCategory.CONCERT,
                 LocalDateTime.now().plusDays(30),
                 50
         )).isInstanceOf(IllegalArgumentException.class)
@@ -70,6 +74,7 @@ public class EventTest {
                 "Concert de jazz",
                 "Description",
                 "  ",
+                EventCategory.CONCERT,
                 LocalDateTime.now().plusDays(30),
                 50
         )).isInstanceOf(IllegalArgumentException.class)
@@ -84,6 +89,7 @@ public class EventTest {
                 "Concert de jazz",
                 "Description",
                 "Théâtre municipal, Tunis",
+                EventCategory.CONCERT,
                 LocalDateTime.now().plusDays(30),
                 100
         );
@@ -100,6 +106,7 @@ public class EventTest {
                 "Concert de jazz",
                 "Description",
                 "Théâtre municipal, Tunis",
+                EventCategory.CONCERT,
                 LocalDateTime.now().plusDays(30),
                 5
         );
@@ -116,6 +123,7 @@ public class EventTest {
                 "Concert de jazz",
                 "Description",
                 "Théâtre municipal, Tunis",
+                EventCategory.CONCERT,
                 LocalDateTime.now().plusDays(30),
                 100
         );
@@ -130,4 +138,18 @@ public class EventTest {
 
 
 
+
+    @Test
+    void should_throw_exception_when_category_is_missing() {
+        assertThatThrownBy(() -> new Event(
+                UUID.randomUUID(),
+                "Concert de jazz",
+                "Description",
+                "Théâtre municipal, Tunis",
+                null,
+                LocalDateTime.now().plusDays(30),
+                50
+        )).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("catégorie");
+    }
 }

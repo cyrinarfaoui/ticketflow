@@ -9,6 +9,7 @@
     </time>
 
     <div>
+      <p class="event-category">{{ category() }}</p>
       <h3>{{ e.title }}</h3>
       <p class="event-location">{{ e.location }}</p>
       <p class="event-time">{{ e.date | date: 'EEE HH:mm' }}</p>

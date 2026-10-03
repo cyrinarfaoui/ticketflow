@@ -1,5 +1,6 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { EventResponse } from '../../../core/services/event.service';
+import { categoryLabel } from '../../../core/models/event-category';
 import { DatePipe } from '@angular/common';
 
 
@@ -25,6 +26,9 @@ readonly reserve = output<number>();
 
   // ÉTAT LOCAL : le nombre de places choisi dans CETTE carte (1 par défaut)
   readonly seats = signal(1);
+
+  // Libellé lisible de la catégorie : CONCERT -> "Concert"
+  readonly category = computed(() => categoryLabel(this.event().category));
 
    // CALCULÉ : pourcentage de places restantes (0 à 100)
   readonly fillPercent = computed(() => {

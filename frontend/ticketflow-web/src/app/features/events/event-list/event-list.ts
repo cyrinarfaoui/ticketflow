@@ -1,13 +1,24 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { RouterLink } from '@angular/router';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute, ParamMap, Params, Router, RouterLink } from '@angular/router';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { combineLatest, debounceTime, distinctUntilChanged, startWith, switchMap } from 'rxjs';
+import { EMPTY, Subject, catchError, combineLatest, debounceTime, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs';
 import { EventService } from '../../../core/services/event.service';
 import { ReservationService } from '../../../core/services/reservation.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { EVENT_CATEGORIES, EventCategory } from '../../../core/models/event-category';
 import { EventCard } from '../event-card/event-card';
+
+// Les filtres du catalogue, tels qu'ils sont dans le formulaire et dans l'URL
+interface CatalogFilters {
+  title: string;
+  location: string;
+  category: EventCategory | '';
+  from: string;
+  to: string;
+  availableOnly: boolean;
+}
 
 @Component({
   imports: [RouterLink, ReactiveFormsModule, EventCard],
@@ -17,39 +28,65 @@ import { EventCard } from '../event-card/event-card';
 })
 export class EventList implements OnInit {
 
-  protected authService = inject(AuthService);
-  private destroyRef = inject(DestroyRef);
+  protected readonly authService = inject(AuthService);
+  protected readonly eventService = inject(EventService);
+  private readonly reservationService = inject(ReservationService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
+  protected readonly categories = EVENT_CATEGORIES;
   readonly errorMessage = signal<string | null>(null);
 
-  readonly searchControl = new FormControl('', { nonNullable: true });
-  readonly locationControl = new FormControl('', { nonNullable: true });
-  readonly availableOnlyControl = new FormControl(false, { nonNullable: true });
+  // Formulaire des filtres : la source de vérité, recopiée dans l'URL à chaque changement
+  readonly filters = inject(FormBuilder).nonNullable.group({
+    title: '',
+    location: '',
+    category: '' as EventCategory | '',
+    from: '',
+    to: '',
+    availableOnly: false,
+  });
 
-  constructor(
-    protected eventService: EventService,
-    private reservationService: ReservationService,
-  ) {}
+  // Relance la recherche avec les filtres actuels (par exemple après une réservation)
+  private readonly refresh$ = new Subject<void>();
 
   ngOnInit(): void {
-    this.eventService.loadEvents();
+    // 1. Un lien partagé (/evenements?location=Tunis...) pré-remplit les filtres
+    this.filters.setValue(filtersFromUrl(this.route.snapshot.queryParamMap), { emitEvent: false });
+
     combineLatest([
-      this.searchControl.valueChanges.pipe(startWith('')),
-      this.locationControl.valueChanges.pipe(startWith('')),
-      this.availableOnlyControl.valueChanges.pipe(startWith(false)),
+      // 2. Les filtres : on attend 300 ms de calme, et on ignore les valeurs identiques
+      this.filters.valueChanges.pipe(
+        startWith(null),
+        debounceTime(300),
+        map(() => this.filters.getRawValue()),
+        distinctUntilChanged(sameFilters),
+      ),
+      // 3. Les demandes de rafraîchissement
+      this.refresh$.pipe(startWith(undefined)),
     ]).pipe(
-      debounceTime(300),
-      distinctUntilChanged((a, b) => a[0] === b[0] && a[1] === b[1] && a[2] === b[2]),
-      switchMap(([title, location, availableOnly]) => this.eventService.search(title, location, availableOnly)),
+      tap(([filters]) => this.updateUrl(filters)),
+      // 4. switchMap : une nouvelle recherche ANNULE la précédente encore en cours
+      switchMap(([filters]) =>
+        this.eventService.search(filters).pipe(
+          // une erreur (affichée par la bannière globale) ne doit pas arrêter les recherches suivantes
+          catchError(() => EMPTY),
+        ),
+      ),
       takeUntilDestroyed(this.destroyRef),
     ).subscribe();
+  }
+
+  resetFilters(): void {
+    this.filters.reset();
   }
 
   reserve(eventId: string, seats: number): void {
     this.errorMessage.set(null);
 
     this.reservationService.createReservation(eventId, seats).subscribe({
-      next: () => this.eventService.loadEvents(),
+      next: () => this.refresh$.next(),
       error: (err: HttpErrorResponse) => {
         // Les erreurs techniques (réseau, 401, 403, 5xx) sont affichées par la bannière globale (errorInterceptor).
         // Ici, on n'affiche que les erreurs métier renvoyées par l'API, par exemple "Pas assez de places".
@@ -57,5 +94,46 @@ export class EventList implements OnInit {
       },
     });
   }
+
+  // Recopie les filtres dans l'URL, sans créer une entrée d'historique à chaque frappe
+  private updateUrl(filters: CatalogFilters): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: toQueryParams(filters),
+      replaceUrl: true,
+    });
+  }
 }
 
+function filtersFromUrl(params: ParamMap): CatalogFilters {
+  const category = params.get('category');
+  return {
+    title: params.get('title') ?? '',
+    location: params.get('location') ?? '',
+    category: EVENT_CATEGORIES.some((c) => c.value === category) ? (category as EventCategory) : '',
+    from: params.get('from') ?? '',
+    to: params.get('to') ?? '',
+    availableOnly: params.get('availableOnly') === 'true',
+  };
+}
+
+// Seuls les filtres renseignés apparaissent dans l'URL
+function toQueryParams(filters: CatalogFilters): Params {
+  const params: Params = {};
+  if (filters.title) params['title'] = filters.title;
+  if (filters.location) params['location'] = filters.location;
+  if (filters.category) params['category'] = filters.category;
+  if (filters.from) params['from'] = filters.from;
+  if (filters.to) params['to'] = filters.to;
+  if (filters.availableOnly) params['availableOnly'] = 'true';
+  return params;
+}
+
+function sameFilters(a: CatalogFilters, b: CatalogFilters): boolean {
+  return a.title === b.title
+    && a.location === b.location
+    && a.category === b.category
+    && a.from === b.from
+    && a.to === b.to
+    && a.availableOnly === b.availableOnly;
+}

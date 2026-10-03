@@ -12,6 +12,7 @@ function createEvent(overrides: Partial<EventResponse> = {}): EventResponse {
     title: 'Concert de jazz',
     description: 'Soirée jazz',
     location: 'Tunis',
+    category: 'CONCERT',
     date: '2026-12-15T20:00:00',
     totalSeats: 100,
     availableSeats: 53,
@@ -84,6 +85,12 @@ describe('EventCard', () => {
   });
 
   describe('affichage (HTML)', () => {
+
+    it('affiche la catégorie en clair', () => {
+      render(createEvent({ category: 'THEATRE' }));
+
+      expect(text('.event-category')).toBe('Théâtre');
+    });
 
     it('affiche le titre et le lieu', () => {
       render(createEvent());

@@ -1,6 +1,9 @@
 package com.ticketflow.event_service.infrastructure;
 
+import com.ticketflow.event_service.domain.EventCategory;
 import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -29,6 +32,10 @@ public class EventEntity {
 
     @Column(nullable = false)
     private String location;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private EventCategory category;
 
     @Column(name = "event_date", nullable = false)
     private LocalDateTime date;

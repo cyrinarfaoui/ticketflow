@@ -1,3 +1,77 @@
+// ---------- Filtres ----------
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.filters__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  input,
+  select {
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font: inherit;
+    background-color: #ffffff;
+  }
+}
+
+.filters__options {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.filters__checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filters__reset {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #ffffff;
+  font: inherit;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #f3f4f6;
+  }
+}
+
+.filters input:focus-visible,
+.filters select:focus-visible,
+.filters__reset:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+.results-count {
+  margin: 0 0 1rem;
+  color: #4b5563;
+}
+
+// ---------- Liste ----------
 .event-list {
   list-style: none;
   padding: 0;
@@ -5,7 +79,6 @@
   gap: 1rem;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 }
-
 
 .create-link {
   display: inline-block;
@@ -26,7 +99,3 @@
     outline-offset: 2px;
   }
 }
-
-
-
-

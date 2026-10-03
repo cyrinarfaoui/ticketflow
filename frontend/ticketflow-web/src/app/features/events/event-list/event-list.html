@@ -1,16 +1,43 @@
 <div class="event-list-container">
-  <div class="search-bar">
-    <label for="search-title">Rechercher</label>
-    <input id="search-title" type="text" [formControl]="searchControl" placeholder="Titre de l'événement..." />
+  <form class="filters" [formGroup]="filters" role="search" aria-label="Filtrer les événements" (submit)="$event.preventDefault()">
+    <div class="filters__field">
+      <label for="filter-title">Titre</label>
+      <input id="filter-title" type="search" formControlName="title" placeholder="Concert, festival…" />
+    </div>
 
-    <label for="search-location">Lieu</label>
-    <input id="search-location" type="text" [formControl]="locationControl" placeholder="Ville, salle..." />
+    <div class="filters__field">
+      <label for="filter-location">Lieu</label>
+      <input id="filter-location" type="search" formControlName="location" placeholder="Ville, salle…" />
+    </div>
 
-    <label>
-      <input type="checkbox" [formControl]="availableOnlyControl" />
-      Places disponibles uniquement
-    </label>
-  </div>
+    <div class="filters__field">
+      <label for="filter-category">Catégorie</label>
+      <select id="filter-category" formControlName="category">
+        <option value="">Toutes les catégories</option>
+        @for (category of categories; track category.value) {
+          <option [value]="category.value">{{ category.label }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="filters__field">
+      <label for="filter-from">Du</label>
+      <input id="filter-from" type="date" formControlName="from" />
+    </div>
+
+    <div class="filters__field">
+      <label for="filter-to">Au</label>
+      <input id="filter-to" type="date" formControlName="to" />
+    </div>
+
+    <div class="filters__options">
+      <label class="filters__checkbox">
+        <input type="checkbox" formControlName="availableOnly" />
+        Places disponibles uniquement
+      </label>
+      <button type="button" class="filters__reset" (click)="resetFilters()">Réinitialiser les filtres</button>
+    </div>
+  </form>
 
   @if (authService.hasRole('ADMIN')) {
     <a routerLink="/events/new" class="create-link">Créer un nouvel événement</a>
@@ -20,9 +47,15 @@
     <p class="error" role="alert">{{ errorMessage() }}</p>
   }
 
-  @if (eventService.events$().length === 0) {
-    <p role="status">Aucun événement pour l'instant.</p>
-  } @else {
+  <p class="results-count" role="status">
+    @switch (eventService.events$().length) {
+      @case (0) { Aucun événement ne correspond à vos critères. }
+      @case (1) { 1 événement trouvé }
+      @default { {{ eventService.events$().length }} événements trouvés }
+    }
+  </p>
+
+  @if (eventService.events$().length > 0) {
     <ul class="event-list" role="list">
       @for (event of eventService.events$(); track event.id) {
         <li>
