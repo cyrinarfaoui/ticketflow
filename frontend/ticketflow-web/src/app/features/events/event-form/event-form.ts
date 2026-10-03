@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { EventService } from '../../../core/services/event.service';
+import { EVENT_CATEGORIES, EventCategory } from '../../../core/models/event-category';
 
 @Component({
   selector: 'app-event-form',
@@ -14,10 +15,13 @@ export class EventForm {
   private eventService = inject(EventService);
   private router = inject(Router);
 
+  protected readonly categories = EVENT_CATEGORIES;
+
   form = this.fb.group({
     title: ['', [Validators.required, Validators.minLength(3)]],
     description: [''],
     location: ['', Validators.required],
+    category: ['' as EventCategory | '', Validators.required],
     date: ['', Validators.required],
     totalSeats: [1, [Validators.required, Validators.min(1)]]
   });
@@ -33,10 +37,11 @@ export class EventForm {
       title: raw.title!,
       description: raw.description ?? '',
       location: raw.location!,
+      category: raw.category as EventCategory,
       date: new Date(raw.date!).toISOString(),
       totalSeats: raw.totalSeats!
     }).subscribe({
-      next: () => this.router.navigate(['/']),
+      next: () => this.router.navigate(['/evenements']),
       error: (err) => console.error('Erreur lors de la création', err)
     });
   }

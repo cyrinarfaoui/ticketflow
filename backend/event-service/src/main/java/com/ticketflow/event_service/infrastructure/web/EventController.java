@@ -3,11 +3,14 @@ package com.ticketflow.event_service.infrastructure.web;
 
 import com.ticketflow.event_service.application.EventService;
 import com.ticketflow.event_service.application.ReservationService;
+import com.ticketflow.event_service.domain.EventCategory;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,7 +30,8 @@ public class EventController {
     @PostMapping
     public ResponseEntity<EventResponse> createEvent(@Valid @RequestBody CreateEventRequest request) {
         var event = eventService.createEvent(
-                request.title(), request.description(), request.location(), request.date(), request.totalSeats()
+                request.title(), request.description(), request.location(), request.category(),
+                request.date(), request.totalSeats()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(EventResponse.from(event));
     }
@@ -36,8 +40,12 @@ public class EventController {
     public List<EventResponse> listEvents(
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String location,
-            @RequestParam(required = false, defaultValue = "false") boolean availableOnly) {
-        return eventService.listEvents(title, location, availableOnly).stream().map(EventResponse::from).toList();
+            @RequestParam(required = false) EventCategory category,
+            @RequestParam(required = false, defaultValue = "false") boolean availableOnly,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return eventService.listEvents(title, location, category, availableOnly, from, to)
+                .stream().map(EventResponse::from).toList();
     }
 
     @GetMapping("/{id}")

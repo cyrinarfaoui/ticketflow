@@ -2,8 +2,10 @@ package com.ticketflow.event_service.infrastructure;
 
 import com.ticketflow.event_service.application.port.out.EventRepository;
 import com.ticketflow.event_service.domain.Event;
+import com.ticketflow.event_service.domain.EventCategory;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,7 +36,8 @@ public class EventRepositoryAdapter implements EventRepository {
     }
 
     @Override
-    public List<Event> search(String title, String location, boolean availableOnly) {
-        return jpaRepository.search(title, location, availableOnly).stream().map(EventMapper::toDomain).toList();
+    public List<Event> search(String title, String location, EventCategory category,
+                              boolean availableOnly, LocalDateTime start, LocalDateTime end) {
+        return jpaRepository.search(title, location, category, availableOnly, start, end).stream().map(EventMapper::toDomain).toList();
     }
 }

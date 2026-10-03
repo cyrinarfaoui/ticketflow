@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Catégorie obligatoire sur une table qui contient déjà des lignes (même méthode que 004) :
+        1. ajouter la colonne en nullable
+        2. remplir les lignes existantes avec AUTRE
+        3. poser la contrainte NOT NULL et la liste des valeurs autorisées
+    -->
+    <changeSet id="005-add-category-to-events" author="cyrine">
+        <addColumn tableName="events">
+            <column name="category" type="varchar(30)"/>
+        </addColumn>
+
+        <update tableName="events">
+            <column name="category" value="AUTRE"/>
+            <where>category IS NULL</where>
+        </update>
+
+        <addNotNullConstraint tableName="events" columnName="category" columnDataType="varchar(30)"/>
+
+        <sql>
+            ALTER TABLE events
+                ADD CONSTRAINT events_category_check
+                CHECK (category IN ('CONCERT', 'THEATRE', 'CONFERENCE', 'SPORT', 'FESTIVAL', 'AUTRE'))
+        </sql>
+
+        <rollback>
+            <dropColumn tableName="events" columnName="category"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

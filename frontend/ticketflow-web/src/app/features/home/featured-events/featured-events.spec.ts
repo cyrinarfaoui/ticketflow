@@ -12,6 +12,7 @@ function event(id: string, date: string, availableSeats = 10): EventResponse {
     title: `Événement ${id}`,
     description: '',
     location: 'Tunis',
+    category: 'CONCERT',
     date,
     totalSeats: 100,
     availableSeats,

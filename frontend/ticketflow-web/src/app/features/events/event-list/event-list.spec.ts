@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { HttpTestingController, provideHttpClientTesting, TestRequest } from '@angular/common/http/testing';
+import { provideRouter, Router } from '@angular/router';
 import { EventList } from './event-list';
 import { AuthService } from '../../../core/services/auth.service';
 import { EventResponse } from '../../../core/services/event.service';
@@ -10,14 +10,16 @@ import { API_BASE_URL } from '../../../core/config/api.config';
 // Données de test : ce que le "faux serveur" renverra
 const EVENTS: EventResponse[] = [
   {
-    id: '1', title: 'Concert de jazz', description: 'Soirée jazz', location: 'Tunis',
+    id: '1', title: 'Concert de jazz', description: 'Soirée jazz', location: 'Tunis', category: 'CONCERT',
     date: '2026-12-15T20:00:00', totalSeats: 100, availableSeats: 53,
   },
   {
-    id: '2', title: 'Festival', description: 'Plein air', location: 'Tabarka',
-    date: '2026-10-02T19:00:00', totalSeats: 250, availableSeats: 250,
+    id: '2', title: 'Festival', description: 'Plein air', location: 'Tabarka', category: 'FESTIVAL',
+    date: '2026-10-20T19:00:00', totalSeats: 250, availableSeats: 250,
   },
 ];
+
+const EVENTS_URL = `${API_BASE_URL}/events`;
 
 describe('EventList (intégration)', () => {
   let fixture: ComponentFixture<EventList>;
@@ -45,8 +47,6 @@ describe('EventList (intégration)', () => {
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
-    fixture = TestBed.createComponent(EventList);
-    element = fixture.nativeElement;
   });
 
   afterEach(() => {
@@ -54,27 +54,50 @@ describe('EventList (intégration)', () => {
     jasmine.clock().uninstall();
   });
 
-  // Simule le chargement complet de la page
+  // Affiche la page, laisse passer le debounce, et renvoie la requête de recherche
+  function openPage(): TestRequest {
+    fixture = TestBed.createComponent(EventList);
+    element = fixture.nativeElement;
+    fixture.detectChanges();
+    jasmine.clock().tick(300);
+    return httpMock.expectOne((r) => r.url === EVENTS_URL);
+  }
+
   function loadPage(events: EventResponse[] = EVENTS): void {
-    fixture.detectChanges();                                           // ngOnInit → loadEvents()
-    httpMock.expectOne(`${API_BASE_URL}/events`).flush(events);        // 1re requête
-    jasmine.clock().tick(300);                                         // fin du debounceTime
-    httpMock.expectOne(`${API_BASE_URL}/events`).flush(events);        // 2e requête (recherche vide)
-    fixture.detectChanges();                                           // met à jour le HTML
+    openPage().flush(events);
+    fixture.detectChanges();
+  }
+
+  // Simule la saisie dans un champ, puis la fin du debounce
+  function type(selector: string, value: string): void {
+    const input = element.querySelector<HTMLInputElement | HTMLSelectElement>(selector)!;
+    input.value = value;
+    input.dispatchEvent(new Event(input.tagName === 'SELECT' ? 'change' : 'input'));
+    jasmine.clock().tick(300);
+  }
+
+  function searchRequest(): TestRequest {
+    return httpMock.expectOne((r) => r.url === EVENTS_URL);
   }
 
   describe('affichage', () => {
 
-    it('affiche une carte par événement reçu de l\'API', () => {
+    it('ne fait qu\'une seule requête au chargement de la page', () => {
       loadPage();
 
       expect(element.querySelectorAll('app-event-card').length).toBe(2);
     });
 
-    it('affiche un message quand il n\'y a aucun événement', () => {
+    it('annonce le nombre de résultats', () => {
+      loadPage();
+
+      expect(element.querySelector('[role="status"]')?.textContent).toContain('2 événements trouvés');
+    });
+
+    it('affiche un message quand aucun événement ne correspond', () => {
       loadPage([]);
 
-      expect(element.textContent).toContain('Aucun événement');
+      expect(element.textContent).toContain('Aucun événement ne correspond à vos critères.');
     });
   });
 
@@ -96,42 +119,117 @@ describe('EventList (intégration)', () => {
     });
   });
 
-  describe('recherche', () => {
+  describe('filtres', () => {
 
     it('envoie le lieu saisi à l\'API après 300 ms', () => {
       loadPage();
 
-      const input = element.querySelector<HTMLInputElement>('#search-location')!;
-      input.value = 'Tunis';
-      input.dispatchEvent(new Event('input'));
-      jasmine.clock().tick(300);
+      type('#filter-location', 'Tunis');
 
-      const req = httpMock.expectOne(
-        (r) => r.url === `${API_BASE_URL}/events` && r.params.get('location') === 'Tunis'
-      );
+      const req = searchRequest();
+      expect(req.request.params.get('location')).toBe('Tunis');
       req.flush([EVENTS[0]]);
       fixture.detectChanges();
-
       expect(element.querySelectorAll('app-event-card').length).toBe(1);
+    });
+
+    it('envoie la catégorie choisie', () => {
+      loadPage();
+
+      type('#filter-category', 'FESTIVAL');
+
+      const req = searchRequest();
+      expect(req.request.params.get('category')).toBe('FESTIVAL');
+      req.flush([EVENTS[1]]);
+    });
+
+    it('envoie les dates de début et de fin', () => {
+      loadPage();
+
+      type('#filter-from', '2026-10-10');
+      searchRequest().flush(EVENTS);
+      type('#filter-to', '2026-10-31');
+
+      const req = searchRequest();
+      expect(req.request.params.get('from')).toBe('2026-10-10');
+      expect(req.request.params.get('to')).toBe('2026-10-31');
+      req.flush([EVENTS[1]]);
+    });
+
+    it('annule la recherche précédente quand une nouvelle arrive (switchMap)', () => {
+      loadPage();
+
+      type('#filter-location', 'Tu');
+      const premiere = searchRequest();
+      type('#filter-location', 'Tunis');
+      const seconde = searchRequest();
+
+      expect(premiere.cancelled).toBeTrue();
+      expect(seconde.cancelled).toBeFalse();
+      seconde.flush([EVENTS[0]]);
+    });
+
+    it('réinitialise tous les filtres', () => {
+      loadPage();
+      type('#filter-location', 'Tunis');
+      searchRequest().flush([EVENTS[0]]);
+
+      element.querySelector<HTMLButtonElement>('.filters__reset')!.click();
+      jasmine.clock().tick(300);
+
+      const req = searchRequest();
+      expect(req.request.params.keys()).toEqual([]);
+      req.flush(EVENTS);
+    });
+  });
+
+  describe('URL partageable', () => {
+
+    it('recopie les filtres dans l\'URL', async () => {
+      loadPage();
+
+      type('#filter-location', 'Tunis');
+      searchRequest().flush([EVENTS[0]]);
+      await fixture.whenStable();
+
+      expect(TestBed.inject(Router).url).toBe('/?location=Tunis');
+    });
+
+    it('pré-remplit les filtres à partir d\'un lien partagé', async () => {
+      await TestBed.inject(Router).navigateByUrl('/?location=Tunis&category=CONCERT&availableOnly=true');
+
+      const req = openPage();
+
+      expect(req.request.params.get('location')).toBe('Tunis');
+      expect(req.request.params.get('category')).toBe('CONCERT');
+      expect(req.request.params.get('availableOnly')).toBe('true');
+      req.flush([EVENTS[0]]);
+      fixture.detectChanges();
+      expect(element.querySelector<HTMLInputElement>('#filter-location')!.value).toBe('Tunis');
     });
   });
 
   describe('réservation', () => {
 
-    it('envoie POST /reservations puis recharge les événements', () => {
+    it('envoie POST /reservations puis relance la recherche avec les filtres actuels', () => {
       loadPage();
+      type('#filter-location', 'Tunis');
+      searchRequest().flush([EVENTS[0]]);
+      fixture.detectChanges();
 
       element.querySelector<HTMLButtonElement>('app-event-card button')!.click();
 
-      const req = httpMock.expectOne(`${API_BASE_URL}/reservations?eventId=1`);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({ seats: 1 });
-      req.flush({ id: 'r1', eventId: '1', seats: 1, status: 'PENDING' });
+      const reservation = httpMock.expectOne(`${API_BASE_URL}/reservations?eventId=1`);
+      expect(reservation.request.method).toBe('POST');
+      expect(reservation.request.body).toEqual({ seats: 1 });
+      reservation.flush({ id: 'r1', eventId: '1', seats: 1, status: 'PENDING' });
 
-      httpMock.expectOne(`${API_BASE_URL}/events`).flush(EVENTS);
+      const refresh = searchRequest();
+      expect(refresh.request.params.get('location')).toBe('Tunis');
+      refresh.flush([EVENTS[0]]);
     });
 
-       it('laisse le 401 à la bannière globale : aucun message dans la liste', () => {
+    it('laisse le 401 à la bannière globale : aucun message dans la liste', () => {
       loadPage();
 
       element.querySelector<HTMLButtonElement>('app-event-card button')!.click();
