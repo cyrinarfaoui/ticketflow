@@ -5,9 +5,16 @@ import com.ticketflow.event_service.application.port.out.ReservationEventPublish
 import com.ticketflow.event_service.application.port.out.ReservationRepository;
 import com.ticketflow.event_service.domain.Event;
 import com.ticketflow.event_service.domain.Reservation;
+import com.ticketflow.event_service.domain.ReservationStats;
+import com.ticketflow.event_service.domain.ReservationStatus;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
@@ -17,13 +24,16 @@ public class ReservationService {
     private final EventRepository eventRepository;
     private final ReservationRepository reservationRepository;
     private final ReservationEventPublisher eventPublisher;
+    private final Clock clock;
 
     public ReservationService(EventRepository eventRepository,
                               ReservationRepository reservationRepository,
-                              ReservationEventPublisher eventPublisher) {
+                              ReservationEventPublisher eventPublisher,
+                              Clock clock) {
         this.eventRepository = eventRepository;
         this.reservationRepository = reservationRepository;
         this.eventPublisher = eventPublisher;
+        this.clock = clock;
     }
 
     @Transactional
@@ -56,5 +66,18 @@ public class ReservationService {
         eventRepository.save(event);
 
         return reservation;
+    }
+
+    public Page<Reservation> listReservations(ReservationStatus status, Pageable pageable) {
+        return reservationRepository.findAll(status, pageable);
+    }
+
+    public ReservationStats stats() {
+        // Minuit aujourd'hui, dans le fuseau de l'horloge (Tunis), converti en Instant
+        Instant startOfDay = LocalDate.now(clock).atStartOfDay(clock.getZone()).toInstant();
+        return new ReservationStats(
+                reservationRepository.countCreatedSince(startOfDay),
+                reservationRepository.countByStatus()
+        );
     }
 }

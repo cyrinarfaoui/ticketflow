@@ -16,6 +16,7 @@ function event(id: string, date: string, availableSeats = 10): EventResponse {
     date,
     totalSeats: 100,
     availableSeats,
+    status: 'OPEN',
   };
 }
 

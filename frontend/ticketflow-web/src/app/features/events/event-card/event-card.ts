@@ -4,8 +4,8 @@ import { categoryLabel } from '../../../core/models/event-category';
 import { DatePipe } from '@angular/common';
 
 
-// Les 3 états possibles d'un événement
-type SeatsStatus = 'available' | 'few' | 'full';
+// Les états possibles d'un événement
+type SeatsStatus = 'available' | 'few' | 'full' | 'closed';
 
 
 @Component({
@@ -38,6 +38,9 @@ readonly reserve = output<number>();
 
   // CALCULÉ : l'état de l'événement, déduit du pourcentage
   readonly status = computed<SeatsStatus>(() => {
+    if (this.event().status === 'CLOSED') {
+      return 'closed';
+    }
     if (this.event().availableSeats === 0) {
       return 'full';
     }

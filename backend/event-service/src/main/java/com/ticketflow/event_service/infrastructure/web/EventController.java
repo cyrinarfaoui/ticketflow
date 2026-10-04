@@ -58,5 +58,10 @@ public class EventController {
         return EventResponse.from(eventService.bookSeats(id, request.seats()));
     }
 
+    @PostMapping("/{id}/close")
+    public EventResponse closeEvent(@PathVariable UUID id) {
+        return EventResponse.from(eventService.closeEvent(id));
+    }
+
 
 }

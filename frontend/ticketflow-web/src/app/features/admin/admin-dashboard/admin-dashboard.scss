@@ -1,0 +1,217 @@
+// Le tableau a besoin de plus de place que les autres pages
+.dashboard {
+  max-width: 1100px;
+}
+
+section {
+  margin-bottom: 2.5rem;
+}
+
+h2 {
+  font-size: 1.35rem;
+}
+
+// ---------- Indicateurs ----------
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem 1.25rem;
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-primary);
+  border-radius: 12px;
+
+  &--warning {
+    border-left-color: #d97706;
+  }
+}
+
+.stat__value {
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.stat__label {
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+// ---------- En-tête de section + filtre ----------
+.section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+
+  h2 {
+    margin: 0;
+  }
+}
+
+.filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  label {
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+
+  select {
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font: inherit;
+    background-color: #ffffff;
+  }
+}
+
+// ---------- Tableaux ----------
+// Sur mobile, le tableau défile horizontalement au lieu de casser la page
+.table-wrapper {
+  overflow-x: auto;
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  transition: opacity 0.15s;
+
+  // Pendant le chargement de la page suivante, l'ancienne reste visible mais estompée
+  &[aria-busy='true'] {
+    opacity: 0.6;
+  }
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.925rem;
+
+  th,
+  td {
+    padding: 0.7rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid #f3f4f6;
+    white-space: nowrap;
+  }
+
+  th {
+    background-color: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .empty {
+    text-align: center;
+    color: #6b7280;
+    padding: 1.5rem;
+  }
+}
+
+.sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-primary);
+  }
+}
+
+// ---------- Badges de statut (couleurs contrastées, le texte reste lisible seul) ----------
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background-color: #f3f4f6;
+  color: #374151;
+
+  &[data-status='CONFIRMED'],
+  &[data-status='OPEN'] {
+    background-color: #dcfce7;
+    color: #166534;
+  }
+
+  &[data-status='PENDING'] {
+    background-color: #fef3c7;
+    color: #92400e;
+  }
+
+  &[data-status='EXPIRED'] {
+    background-color: #fee2e2;
+    color: #991b1b;
+  }
+}
+
+.action-button {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--color-error);
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: var(--color-error);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #fef2f2;
+  }
+}
+
+// ---------- Pagination ----------
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+
+  button {
+    padding: 0.45rem 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background-color: #ffffff;
+    font: inherit;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// Contour visible au clavier
+.sort-button:focus-visible,
+.action-button:focus-visible,
+.pagination button:focus-visible,
+.filter select:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}

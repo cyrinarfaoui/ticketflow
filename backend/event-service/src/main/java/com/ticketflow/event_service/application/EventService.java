@@ -65,4 +65,10 @@ public class EventService {
         event.book(seats);
         return eventRepository.save(event);
     }
+
+    public Event closeEvent(UUID eventId) {
+        Event event = getEvent(eventId);
+        event.close();
+        return eventRepository.save(event);
+    }
 }

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,6 +42,18 @@ public class ReservationMapperTest {
         assertThat(reservation.getEventId()).isEqualTo(EVENT_ID);
         assertThat(reservation.getSeats()).isEqualTo(2);
         assertThat(reservation.getStatus()).isEqualTo(statut);
+    }
+
+    @Test
+    void conserve_la_date_de_creation_dans_les_deux_sens() {
+        Instant creation = Instant.parse("2026-10-01T08:30:00Z");
+        ReservationEntity entity = new ReservationEntity(ID, EVENT_ID, 2, ReservationStatus.CANCELLED, creation);
+
+        Reservation reservation = ReservationMapper.toDomain(entity);
+        ReservationEntity retour = ReservationMapper.toEntity(reservation);
+
+        assertThat(reservation.getCreatedAt()).isEqualTo(creation);
+        assertThat(retour.getCreatedAt()).isEqualTo(creation);
     }
 
 

@@ -9,12 +9,15 @@ public class ReservationMapper {
                 reservation.getId(),
                 reservation.getEventId(),
                 reservation.getSeats(),
-                reservation.getStatus()
+                reservation.getStatus(),
+                reservation.getCreatedAt()
         );
     }
 
     public static Reservation toDomain(ReservationEntity entity) {
-        Reservation reservation = new Reservation(entity.getId(), entity.getEventId(), entity.getSeats());
+        Reservation reservation = new Reservation(
+                entity.getId(), entity.getEventId(), entity.getSeats(), entity.getCreatedAt()
+        );
         switch (entity.getStatus()) {
             case CONFIRMED -> reservation.confirm();
             case CANCELLED -> reservation.cancel();

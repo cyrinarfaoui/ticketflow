@@ -3,10 +3,16 @@ package com.ticketflow.event_service.infrastructure;
 
 import com.ticketflow.event_service.application.port.out.ReservationRepository;
 import com.ticketflow.event_service.domain.Reservation;
+import com.ticketflow.event_service.domain.ReservationStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 public class ReservationRepositoryAdapter implements ReservationRepository {
@@ -26,6 +32,27 @@ public class ReservationRepositoryAdapter implements ReservationRepository {
     @Override
     public Optional<Reservation> findById(UUID id) {
         return jpaRepository.findById(id).map(ReservationMapper::toDomain);
+    }
+
+    @Override
+    public Page<Reservation> findAll(ReservationStatus status, Pageable pageable) {
+        Page<ReservationEntity> page = (status == null)
+                ? jpaRepository.findAll(pageable)
+                : jpaRepository.findByStatus(status, pageable);
+        return page.map(ReservationMapper::toDomain);
+    }
+
+    @Override
+    public long countCreatedSince(Instant since) {
+        return jpaRepository.countByCreatedAtGreaterThanEqual(since);
+    }
+
+    @Override
+    public Map<ReservationStatus, Long> countByStatus() {
+        return jpaRepository.countByStatus().stream()
+                .collect(Collectors.toMap(
+                        ReservationJpaRepository.StatusCount::getStatus,
+                        ReservationJpaRepository.StatusCount::getTotal));
     }
 
 }

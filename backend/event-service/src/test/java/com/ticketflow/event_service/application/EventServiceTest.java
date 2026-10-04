@@ -1,10 +1,13 @@
 package com.ticketflow.event_service.application;
 
 import com.ticketflow.event_service.application.port.out.EventRepository;
+import com.ticketflow.event_service.domain.Event;
 import com.ticketflow.event_service.domain.EventCategory;
+import com.ticketflow.event_service.domain.EventStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -13,10 +16,16 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class EventServiceTest {
@@ -86,5 +95,27 @@ class EventServiceTest {
         service.listEvents("jazz", "Tunis", EventCategory.CONCERT, false, null, null);
 
         verify(eventRepository).search("jazz", "Tunis", EventCategory.CONCERT, false, NOW, EventService.NO_END);
+    }
+
+    @Test
+    void cloture_l_evenement_et_l_enregistre() {
+        Event event = new Event(UUID.randomUUID(), "Concert", "", "Tunis", EventCategory.CONCERT, NOW.plusDays(5), 50);
+        when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
+        when(eventRepository.save(any(Event.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.closeEvent(event.getId());
+
+        // ArgumentCaptor : on récupère l'objet réellement passé à save() pour l'inspecter
+        ArgumentCaptor<Event> saved = ArgumentCaptor.forClass(Event.class);
+        verify(eventRepository).save(saved.capture());
+        assertThat(saved.getValue().getStatus()).isEqualTo(EventStatus.CLOSED);
+    }
+
+    @Test
+    void cloturer_un_evenement_inconnu_renvoie_une_erreur_introuvable() {
+        UUID inconnu = UUID.randomUUID();
+        when(eventRepository.findById(inconnu)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.closeEvent(inconnu)).isInstanceOf(NoSuchElementException.class);
     }
 }

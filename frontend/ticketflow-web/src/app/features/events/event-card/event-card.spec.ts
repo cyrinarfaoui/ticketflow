@@ -16,6 +16,7 @@ function createEvent(overrides: Partial<EventResponse> = {}): EventResponse {
     date: '2026-12-15T20:00:00',
     totalSeats: 100,
     availableSeats: 53,
+    status: 'OPEN',
     ...overrides,
   };
 }
@@ -103,6 +104,13 @@ describe('EventCard', () => {
       render(createEvent({ availableSeats: 0 }));
 
       expect(element.textContent).toContain('Complet');
+      expect(element.querySelector('button')).toBeNull();
+    });
+
+    it('signale un événement clôturé et cache le bouton Réserver', () => {
+      render(createEvent({ status: 'CLOSED' }));
+
+      expect(text('.seats-label--closed')).toBe('Réservations clôturées');
       expect(element.querySelector('button')).toBeNull();
     });
   });

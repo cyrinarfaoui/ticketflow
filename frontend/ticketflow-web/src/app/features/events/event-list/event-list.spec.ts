@@ -11,11 +11,11 @@ import { API_BASE_URL } from '../../../core/config/api.config';
 const EVENTS: EventResponse[] = [
   {
     id: '1', title: 'Concert de jazz', description: 'Soirée jazz', location: 'Tunis', category: 'CONCERT',
-    date: '2026-12-15T20:00:00', totalSeats: 100, availableSeats: 53,
+    date: '2026-12-15T20:00:00', totalSeats: 100, availableSeats: 53, status: 'OPEN',
   },
   {
     id: '2', title: 'Festival', description: 'Plein air', location: 'Tabarka', category: 'FESTIVAL',
-    date: '2026-10-20T19:00:00', totalSeats: 250, availableSeats: 250,
+    date: '2026-10-20T19:00:00', totalSeats: 250, availableSeats: 250, status: 'OPEN',
   },
 ];
 
