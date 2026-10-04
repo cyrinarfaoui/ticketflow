@@ -8,6 +8,7 @@ public class ReservationMapper {
         return new ReservationEntity(
                 reservation.getId(),
                 reservation.getEventId(),
+                reservation.getUserId(),
                 reservation.getSeats(),
                 reservation.getStatus(),
                 reservation.getCreatedAt()
@@ -16,7 +17,7 @@ public class ReservationMapper {
 
     public static Reservation toDomain(ReservationEntity entity) {
         Reservation reservation = new Reservation(
-                entity.getId(), entity.getEventId(), entity.getSeats(), entity.getCreatedAt()
+                entity.getId(), entity.getEventId(), entity.getUserId(), entity.getSeats(), entity.getCreatedAt()
         );
         switch (entity.getStatus()) {
             case CONFIRMED -> reservation.confirm();

@@ -99,6 +99,20 @@ describe('App', () => {
       expect(navLink(element, 'Événements')?.hasAttribute('aria-current')).toBeFalse();
     });
 
+    it('cache le lien "Mes réservations" à un visiteur non connecté', async () => {
+      authService.isLoggedIn.and.returnValue(false);
+      const element = await renderAt('/');
+
+      expect(navLink(element, 'Mes réservations')).toBeUndefined();
+    });
+
+    it('affiche le lien "Mes réservations" à un utilisateur connecté', async () => {
+      authService.isLoggedIn.and.returnValue(true);
+      const element = await renderAt('/');
+
+      expect(navLink(element, 'Mes réservations')?.getAttribute('href')).toBe('/mes-reservations');
+    });
+
     it('cache le lien "Tableau de bord" à un utilisateur non admin', async () => {
       authService.hasRole.and.returnValue(false);
       const element = await renderAt('/');

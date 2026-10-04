@@ -34,7 +34,7 @@ class KafkaReservationEventPublisherTest {
     @InjectMocks
     private KafkaReservationEventPublisher publisher;
 
-    private final Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), 2);
+    private final Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), "user-1", 2);
 
     @Test
     void publie_l_evenement_sur_le_topic_reservation_created() {

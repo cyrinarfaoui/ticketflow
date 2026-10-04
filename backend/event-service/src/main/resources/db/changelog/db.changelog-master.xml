@@ -12,5 +12,6 @@
     <include file="changes/004-add-location-to-events.xml" relativeToChangelogFile="true"/>
     <include file="changes/005-add-category-to-events.xml" relativeToChangelogFile="true"/>
     <include file="changes/006-add-status-to-events.xml" relativeToChangelogFile="true"/>
+    <include file="changes/007-add-user-id-to-reservations.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

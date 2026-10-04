@@ -1,0 +1,61 @@
+<main class="my-reservations">
+  <h1>Mes réservations</h1>
+  @if (username) {
+    <p class="intro">Bonjour {{ username }}, voici l'historique de vos réservations.</p>
+  }
+
+  <!-- Toujours présent dans la page, pour que les lecteurs d'écran annoncent le message quand il apparaît -->
+  <p class="success" role="status">{{ successMessage() }}</p>
+
+  @if (errorMessage()) {
+    <p class="error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  @if (reservations.isLoading() && reservations.value().length === 0) {
+    <p role="status">Chargement de vos réservations…</p>
+  } @else if (reservations.error()) {
+    <p class="error" role="alert">Impossible de charger vos réservations.</p>
+  } @else {
+    @if (reservations.value().length > 0) {
+      <ul class="reservation-list" role="list">
+        @for (reservation of reservations.value(); track reservation.id) {
+          @let status = statusDisplay(reservation.status);
+          <li>
+            <article class="reservation" [attr.data-status]="reservation.status" [attr.aria-labelledby]="'title-' + reservation.id">
+              <div class="reservation__main">
+                <h2 class="reservation__title" [id]="'title-' + reservation.id">{{ reservation.eventTitle }}</h2>
+                <p class="reservation__details">
+                  @if (reservation.eventDate) {
+                    <time [attr.datetime]="reservation.eventDate">{{ reservation.eventDate | date: 'EEEE d MMMM y, HH:mm' }}</time>
+                  }
+                  @if (reservation.eventLocation) {
+                    · {{ reservation.eventLocation }}
+                  }
+                </p>
+                <p class="reservation__meta">
+                  {{ reservation.seats }} place(s) · réservée le {{ reservation.createdAt | date: 'dd/MM/yyyy à HH:mm' }}
+                </p>
+              </div>
+
+              <div class="reservation__side">
+                <p class="status" [attr.data-status]="reservation.status">
+                  <span aria-hidden="true">{{ status.icon }}</span> {{ status.label }}
+                </p>
+                @if (canCancel(reservation)) {
+                  <button type="button" class="cancel-button" (click)="cancel(reservation)">
+                    Annuler<span class="visually-hidden"> la réservation pour {{ reservation.eventTitle }}</span>
+                  </button>
+                }
+              </div>
+            </article>
+          </li>
+        }
+      </ul>
+    } @else {
+      <div class="empty">
+        <p>Vous n'avez pas encore de réservation.</p>
+        <a routerLink="/evenements" class="empty__link">Découvrir les événements</a>
+      </div>
+    }
+  }
+</main>

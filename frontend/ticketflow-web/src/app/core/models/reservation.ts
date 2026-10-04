@@ -22,6 +22,18 @@ export interface AdminReservation {
   createdAt: string;
 }
 
+// MyReservationResponse.java : une ligne de "Mes réservations", avec l'événement
+export interface MyReservation {
+  id: string;
+  eventId: string;
+  eventTitle: string;
+  eventLocation: string | null;
+  eventDate: string | null;
+  seats: number;
+  status: ReservationStatus;
+  createdAt: string;
+}
+
 // PageResponse.java : une page de résultats + de quoi afficher "page 2 sur 5"
 export interface Page<T> {
   content: T[];

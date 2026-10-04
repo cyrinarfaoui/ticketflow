@@ -21,6 +21,10 @@ public class ReservationEntity {
     @Column(name = "event_id", nullable = false)
     private UUID eventId;
 
+    // Identifiant Keycloak ("sub" du JWT) ; null pour les réservations créées avant le ticket #10
+    @Column(name = "user_id", length = 64)
+    private String userId;
+
     @Column(nullable = false)
     private int seats;
 
@@ -31,15 +35,19 @@ public class ReservationEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    // Constructeur conservé pour ne rien casser là où il est déjà utilisé (ex. ReservationMapper)
+    // Raccourcis gardés pour les tests existants (réservation sans propriétaire)
     public ReservationEntity(UUID id, UUID eventId, int seats, ReservationStatus status) {
-        this(id, eventId, seats, status, Instant.now());
+        this(id, eventId, null, seats, status, Instant.now());
     }
 
-    // Nouveau constructeur : utilisé par le batch pour changer le statut sans perdre la date de création d'origine
     public ReservationEntity(UUID id, UUID eventId, int seats, ReservationStatus status, Instant createdAt) {
+        this(id, eventId, null, seats, status, createdAt);
+    }
+
+    public ReservationEntity(UUID id, UUID eventId, String userId, int seats, ReservationStatus status, Instant createdAt) {
         this.id = id;
         this.eventId = eventId;
+        this.userId = userId;
         this.seats = seats;
         this.status = status;
         this.createdAt = createdAt;

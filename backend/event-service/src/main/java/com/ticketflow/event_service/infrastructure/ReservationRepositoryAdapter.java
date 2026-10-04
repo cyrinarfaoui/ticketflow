@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,6 +41,11 @@ public class ReservationRepositoryAdapter implements ReservationRepository {
                 ? jpaRepository.findAll(pageable)
                 : jpaRepository.findByStatus(status, pageable);
         return page.map(ReservationMapper::toDomain);
+    }
+
+    @Override
+    public List<Reservation> findByUserId(String userId) {
+        return jpaRepository.findByUserIdOrderByCreatedAtDesc(userId).stream().map(ReservationMapper::toDomain).toList();
     }
 
     @Override

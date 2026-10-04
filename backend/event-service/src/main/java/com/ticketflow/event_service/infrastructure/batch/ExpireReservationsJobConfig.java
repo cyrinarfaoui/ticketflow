@@ -4,6 +4,7 @@ import com.ticketflow.event_service.domain.Reservation;
 import com.ticketflow.event_service.domain.ReservationStatus;
 import com.ticketflow.event_service.infrastructure.ReservationEntity;
 import com.ticketflow.event_service.infrastructure.ReservationJpaRepository;
+import com.ticketflow.event_service.infrastructure.ReservationMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.Job;
@@ -38,16 +39,11 @@ public class ExpireReservationsJobConfig {
 
     @Bean
     public ItemProcessor<ReservationEntity, ReservationEntity> expireReservationProcessor() {
+        // Passer par le mapper garantit qu'aucun champ (createdAt, userId…) n'est perdu au passage
         return entity -> {
-            Reservation reservation = new Reservation(entity.getId(), entity.getEventId(), entity.getSeats());
+            Reservation reservation = ReservationMapper.toDomain(entity);
             reservation.expire();
-            return new ReservationEntity(
-                    entity.getId(),
-                    entity.getEventId(),
-                    entity.getSeats(),
-                    reservation.getStatus(),
-                    entity.getCreatedAt()
-            );
+            return ReservationMapper.toEntity(reservation);
         };
     }
 

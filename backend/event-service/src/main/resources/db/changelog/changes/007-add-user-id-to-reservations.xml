@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Propriétaire de la réservation : l'identifiant Keycloak ("sub" du JWT).
+        Colonne NULLABLE : les réservations créées avant ce ticket n'ont pas de propriétaire connu,
+        on ne peut pas inventer une valeur pour elles.
+    -->
+    <changeSet id="007-add-user-id-to-reservations" author="cyrine">
+        <addColumn tableName="reservations">
+            <column name="user_id" type="varchar(64)"/>
+        </addColumn>
+
+        <!-- "Mes réservations" = WHERE user_id = ? ORDER BY created_at DESC : cet index sert exactement cette requête -->
+        <createIndex tableName="reservations" indexName="idx_reservations_user_id_created_at">
+            <column name="user_id"/>
+            <column name="created_at"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="reservations" indexName="idx_reservations_user_id_created_at"/>
+            <dropColumn tableName="reservations" columnName="user_id"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

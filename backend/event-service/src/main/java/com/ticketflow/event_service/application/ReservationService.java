@@ -15,8 +15,13 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class ReservationService {
@@ -37,14 +42,14 @@ public class ReservationService {
     }
 
     @Transactional
-    public Reservation createReservation(UUID eventId, int seats) {
+    public Reservation createReservation(UUID eventId, String userId, int seats) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NoSuchElementException("Événement introuvable : " + eventId));
 
         event.book(seats);
         eventRepository.save(event);
 
-        Reservation reservation = new Reservation(UUID.randomUUID(), eventId, seats);
+        Reservation reservation = new Reservation(UUID.randomUUID(), eventId, userId, seats);
         Reservation saved = reservationRepository.save(reservation);
 
         eventPublisher.publishCreated(saved);
@@ -52,10 +57,19 @@ public class ReservationService {
         return saved;
     }
 
+    /**
+     * Annule une réservation.
+     * Seul son propriétaire peut le faire, ou un administrateur (dashboard).
+     * La vérification est faite ICI, côté serveur : cacher le bouton dans le frontend ne protège rien.
+     */
     @Transactional
-    public Reservation cancelReservation(UUID reservationId) {
+    public Reservation cancelReservation(UUID reservationId, String userId, boolean admin) {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new NoSuchElementException("Réservation introuvable : " + reservationId));
+
+        if (!admin && !reservation.isOwnedBy(userId)) {
+            throw new ReservationAccessDeniedException("Vous ne pouvez annuler que vos propres réservations");
+        }
 
         reservation.cancel();
         reservationRepository.save(reservation);
@@ -70,6 +84,26 @@ public class ReservationService {
 
     public Page<Reservation> listReservations(ReservationStatus status, Pageable pageable) {
         return reservationRepository.findAll(status, pageable);
+    }
+
+    /**
+     * Les réservations de l'utilisateur, chacune avec son événement.
+     * Deux requêtes au total (réservations, puis tous leurs événements d'un coup),
+     * et non une requête par réservation : on évite le problème "N+1".
+     */
+    public List<ReservationWithEvent> listMyReservations(String userId) {
+        List<Reservation> reservations = reservationRepository.findByUserId(userId);
+        if (reservations.isEmpty()) {
+            return List.of();
+        }
+
+        Set<UUID> eventIds = reservations.stream().map(Reservation::getEventId).collect(Collectors.toSet());
+        Map<UUID, Event> events = eventRepository.findAllById(eventIds).stream()
+                .collect(Collectors.toMap(Event::getId, Function.identity()));
+
+        return reservations.stream()
+                .map(reservation -> new ReservationWithEvent(reservation, events.get(reservation.getEventId())))
+                .toList();
     }
 
     public ReservationStats stats() {
