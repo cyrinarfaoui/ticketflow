@@ -18,6 +18,9 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
 
     long countByCreatedAtGreaterThanEqual(Instant since);
 
+    // Utilise l'index (user_id, created_at) du changeset 007
+    List<ReservationEntity> findByUserIdOrderByCreatedAtDesc(String userId);
+
     // Projection : Spring Data remplit cette interface avec les colonnes "status" et "total"
     interface StatusCount {
         ReservationStatus getStatus();

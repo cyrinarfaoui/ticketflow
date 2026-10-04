@@ -11,14 +11,14 @@ class ReservationTest {
 
     @Test
     void should_start_in_pending_state() {
-        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), 3);
+        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), "user-1", 3);
 
         assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.PENDING);
     }
 
     @Test
     void should_move_to_confirmed_when_confirming_a_pending_reservation() {
-        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), 3);
+        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), "user-1", 3);
 
         reservation.confirm();
 
@@ -27,7 +27,7 @@ class ReservationTest {
 
     @Test
     void should_move_to_cancelled_when_cancelling_a_pending_reservation() {
-        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), 3);
+        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), "user-1", 3);
 
         reservation.cancel();
 
@@ -36,7 +36,7 @@ class ReservationTest {
 
     @Test
     void should_move_to_cancelled_when_cancelling_a_confirmed_reservation() {
-        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), 3);
+        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), "user-1", 3);
         reservation.confirm();
 
         reservation.cancel();
@@ -46,7 +46,7 @@ class ReservationTest {
 
     @Test
     void should_throw_exception_when_confirming_an_already_cancelled_reservation() {
-        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), 3);
+        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), "user-1", 3);
         reservation.cancel();
 
         assertThatThrownBy(reservation::confirm)
@@ -56,11 +56,27 @@ class ReservationTest {
 
     @Test
     void should_throw_exception_when_cancelling_an_already_cancelled_reservation() {
-        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), 3);
+        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), "user-1", 3);
         reservation.cancel();
 
         assertThatThrownBy(reservation::cancel)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("déjà annulée");
+    }
+
+    @Test
+    void une_nouvelle_reservation_appartient_a_l_utilisateur_qui_la_cree() {
+        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), "user-1", 2);
+
+        assertThat(reservation.getUserId()).isEqualTo("user-1");
+        assertThat(reservation.isOwnedBy("user-1")).isTrue();
+        assertThat(reservation.isOwnedBy("user-2")).isFalse();
+    }
+
+    @Test
+    void une_nouvelle_reservation_sans_utilisateur_est_refusee() {
+        assertThatThrownBy(() -> new Reservation(UUID.randomUUID(), UUID.randomUUID(), " ", 2))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("utilisateur");
     }
 }

@@ -19,7 +19,7 @@ public class ReservationMapperTest {
 
     @Test
     void toEntity_copie_tous_les_champs_du_domaine() {
-        Reservation reservation = new Reservation(ID, EVENT_ID, 3);
+        Reservation reservation = new Reservation(ID, EVENT_ID, "user-1", 3);
 
         ReservationEntity entity = ReservationMapper.toEntity(reservation);
 
@@ -45,15 +45,17 @@ public class ReservationMapperTest {
     }
 
     @Test
-    void conserve_la_date_de_creation_dans_les_deux_sens() {
+    void conserve_la_date_de_creation_et_le_proprietaire_dans_les_deux_sens() {
         Instant creation = Instant.parse("2026-10-01T08:30:00Z");
-        ReservationEntity entity = new ReservationEntity(ID, EVENT_ID, 2, ReservationStatus.CANCELLED, creation);
+        ReservationEntity entity = new ReservationEntity(ID, EVENT_ID, "user-1", 2, ReservationStatus.CANCELLED, creation);
 
         Reservation reservation = ReservationMapper.toDomain(entity);
         ReservationEntity retour = ReservationMapper.toEntity(reservation);
 
         assertThat(reservation.getCreatedAt()).isEqualTo(creation);
+        assertThat(reservation.getUserId()).isEqualTo("user-1");
         assertThat(retour.getCreatedAt()).isEqualTo(creation);
+        assertThat(retour.getUserId()).isEqualTo("user-1");
     }
 
 

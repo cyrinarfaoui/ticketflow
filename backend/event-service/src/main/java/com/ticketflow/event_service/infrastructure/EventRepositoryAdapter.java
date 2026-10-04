@@ -6,6 +6,7 @@ import com.ticketflow.event_service.domain.EventCategory;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,6 +34,11 @@ public class EventRepositoryAdapter implements EventRepository {
     @Override
     public List<Event> findAll() {
         return jpaRepository.findAll().stream().map(EventMapper::toDomain).toList();
+    }
+
+    @Override
+    public List<Event> findAllById(Collection<UUID> ids) {
+        return jpaRepository.findAllById(ids).stream().map(EventMapper::toDomain).toList();
     }
 
     @Override

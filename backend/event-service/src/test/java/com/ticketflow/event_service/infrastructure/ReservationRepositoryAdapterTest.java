@@ -87,6 +87,24 @@ class ReservationRepositoryAdapterTest {
         assertThat(adapter.countCreatedSince(T2)).isEqualTo(2); // T2 inclus, T3
     }
 
+    @Test
+    void ne_renvoie_que_les_reservations_de_l_utilisateur_les_plus_recentes_d_abord() {
+        UUID premiere = saveFor("user-1", T1);
+        UUID autreUtilisateur = saveFor("user-2", T2);
+        UUID derniere = saveFor("user-1", T3);
+
+        assertThat(adapter.findByUserId("user-1"))
+                .extracting(Reservation::getId)
+                .containsExactly(derniere, premiere)
+                .doesNotContain(autreUtilisateur);
+    }
+
+    private UUID saveFor(String userId, Instant createdAt) {
+        UUID id = UUID.randomUUID();
+        jpaRepository.save(new ReservationEntity(id, UUID.randomUUID(), userId, 1, ReservationStatus.PENDING, createdAt));
+        return id;
+    }
+
     private UUID save(ReservationStatus status, Instant createdAt) {
         UUID id = UUID.randomUUID();
         jpaRepository.save(new ReservationEntity(id, UUID.randomUUID(), 1, status, createdAt));
