@@ -16,6 +16,7 @@ public class Event {
     private final LocalDateTime date;
     private final int totalSeats;
     private int availableSeats;
+    private EventStatus status;
 
     public Event(UUID id, String title, String description, String location, EventCategory category,
                  LocalDateTime date, int totalSeats) {
@@ -43,6 +44,7 @@ public class Event {
         this.date = date;
         this.totalSeats = totalSeats;
         this.availableSeats = totalSeats;
+        this.status = EventStatus.OPEN;
     }
 
 
@@ -50,12 +52,15 @@ public class Event {
      * Réserve un nombre de places sur l'événement.
      *
      * @param seats nombre de places à réserver, doit être positif
-     * @throws IllegalStateException si le nombre de places demandées
-     *         dépasse le nombre de places encore disponibles
+     * @throws IllegalStateException si l'événement est clôturé, ou si le nombre de places
+     *         demandées dépasse le nombre de places encore disponibles
      */
     public void book(int seats) {
         if (seats <= 0) {
             throw new IllegalArgumentException("Le nombre de places à réserver doit être positif");
+        }
+        if (status == EventStatus.CLOSED) {
+            throw new IllegalStateException("Les réservations sont clôturées pour cet événement");
         }
         if (seats > availableSeats) {
             throw new IllegalStateException("Pas assez de places disponibles pour cette réservation");
@@ -69,6 +74,17 @@ public class Event {
             throw new IllegalArgumentException("Le nombre de places à libérer doit être positif");
         }
         this.availableSeats = Math.min(totalSeats, availableSeats + seats);
+    }
+
+    /**
+     * Clôture les réservations (action admin). Les réservations existantes restent valables :
+     * on peut encore les annuler, mais plus aucune nouvelle réservation n'est acceptée.
+     */
+    public void close() {
+        if (status == EventStatus.CLOSED) {
+            throw new IllegalStateException("Les réservations de cet événement sont déjà clôturées");
+        }
+        this.status = EventStatus.CLOSED;
     }
 
 }

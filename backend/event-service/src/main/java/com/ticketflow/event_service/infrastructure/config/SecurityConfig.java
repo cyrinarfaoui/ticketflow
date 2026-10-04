@@ -3,6 +3,7 @@ package com.ticketflow.event_service.infrastructure.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.GrantedAuthority;
@@ -25,11 +26,16 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
+                // Les règles sont lues de haut en bas : la première qui correspond s'applique.
+                // Donc les plus précises en haut, les plus générales en bas.
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/events/**").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/events").hasRole("ADMIN")
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/events/*/book").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/events/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/events").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/events/*/book", "/events/*/close").hasRole("ADMIN")
+                        // Lister toutes les réservations et les statistiques : réservé à l'admin (dashboard)
+                        .requestMatchers(HttpMethod.GET, "/reservations", "/reservations/stats").hasRole("ADMIN")
+                        // Réserver / annuler : tout utilisateur connecté
                         .requestMatchers("/reservations/**").authenticated()
                         .anyRequest().authenticated()
                 )
@@ -62,5 +68,4 @@ public class SecurityConfig {
         return converter;
     }
 
-    
 }

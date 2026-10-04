@@ -16,7 +16,7 @@ public interface EventJpaRepository extends JpaRepository<EventEntity, UUID> {
             "(:title IS NULL OR LOWER(e.title) LIKE LOWER(CONCAT('%', CAST(:title AS string), '%'))) AND " +
             "(:location IS NULL OR LOWER(e.location) LIKE LOWER(CONCAT('%', CAST(:location AS string), '%'))) AND " +
             "(:category IS NULL OR e.category = :category) AND " +
-            "(:availableOnly = false OR e.availableSeats > 0) AND " +
+            "(:availableOnly = false OR (e.availableSeats > 0 AND e.status = com.ticketflow.event_service.domain.EventStatus.OPEN)) AND " +
             "e.date >= :start AND e.date < :end " +
             "ORDER BY e.date")
     List<EventEntity> search(@Param("title") String title,

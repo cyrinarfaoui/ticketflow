@@ -1,6 +1,7 @@
 package com.ticketflow.event_service.infrastructure;
 
 import com.ticketflow.event_service.domain.EventCategory;
+import com.ticketflow.event_service.domain.EventStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -45,4 +46,8 @@ public class EventEntity {
 
     @Column(name = "available_seats", nullable = false)
     private int availableSeats;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private EventStatus status;
 }

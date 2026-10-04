@@ -1,6 +1,7 @@
 package com.ticketflow.event_service.infrastructure;
 
 import com.ticketflow.event_service.domain.Event;
+import com.ticketflow.event_service.domain.EventStatus;
 
 public class EventMapper {
 
@@ -13,7 +14,8 @@ public class EventMapper {
                 event.getCategory(),
                 event.getDate(),
                 event.getTotalSeats(),
-                event.getAvailableSeats()
+                event.getAvailableSeats(),
+                event.getStatus()
         );
     }
 
@@ -30,6 +32,10 @@ public class EventMapper {
         );
         if (entity.getAvailableSeats() < entity.getTotalSeats()) {
             event.book(entity.getTotalSeats() - entity.getAvailableSeats());
+        }
+        // Clôturer APRÈS avoir rejoué les places réservées : book() refuse un événement clôturé
+        if (entity.getStatus() == EventStatus.CLOSED) {
+            event.close();
         }
         return event;
     }

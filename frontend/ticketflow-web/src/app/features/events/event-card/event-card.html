@@ -26,6 +26,9 @@
   </div>
 
   @switch (status()) {
+    @case ('closed') {
+      <p class="seats-label seats-label--closed">Réservations clôturées</p>
+    }
     @case ('full') {
       <p class="seats-label seats-label--full">Complet</p>
     }
@@ -37,7 +40,7 @@
     }
   }
 
-   @if (bookable() && status() !== 'full') {
+   @if (bookable() && status() !== 'full' && status() !== 'closed') {
     <div class="reserve-row">
       <label [for]="'seats-' + e.id">Places</label>
       <input

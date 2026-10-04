@@ -8,6 +8,7 @@ import { EventForm } from './features/events/event-form/event-form';
 import { routes } from './app.routes';
 import { HomePage } from './features/home/home-page/home-page';
 import { EventsPage } from './features/events/events-page/events-page';
+import { AdminDashboard } from './features/admin/admin-dashboard/admin-dashboard';
 
 describe('Routes de l\'application (sécurité)', () => {
   let authService: jasmine.SpyObj<AuthService>;
@@ -64,6 +65,26 @@ describe('Routes de l\'application (sécurité)', () => {
     const page = await harness.navigateByUrl('/', HomePage);
 
     expect(page).toBeInstanceOf(HomePage);
+  });
+
+  it('refuse le tableau de bord à un utilisateur non admin', async () => {
+    authService.isLoggedIn.and.returnValue(true);
+    authService.hasRole.and.returnValue(false);
+
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/admin');
+
+    expect(TestBed.inject(Router).url).toBe('/');
+  });
+
+  it('charge le tableau de bord (lazy loading) pour un admin', async () => {
+    authService.isLoggedIn.and.returnValue(true);
+    authService.hasRole.and.returnValue(true);
+
+    const harness = await RouterTestingHarness.create();
+    const page = await harness.navigateByUrl('/admin', AdminDashboard);
+
+    expect(page).toBeInstanceOf(AdminDashboard);
   });
 
     it('affiche le catalogue des événements sur /evenements', async () => {

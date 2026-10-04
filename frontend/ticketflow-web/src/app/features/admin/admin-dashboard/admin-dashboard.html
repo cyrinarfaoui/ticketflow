@@ -1,0 +1,165 @@
+<main class="dashboard">
+  <h1>Tableau de bord</h1>
+
+  @if (actionError()) {
+    <p class="error" role="alert">{{ actionError() }}</p>
+  }
+
+  <!-- ========== Indicateurs ========== -->
+  <section aria-labelledby="stats-title">
+    <h2 id="stats-title">Indicateurs</h2>
+
+    @if (stats.hasValue()) {
+      @let s = stats.value();
+      <ul class="stats" role="list">
+        <li class="stat">
+          <span class="stat__value">{{ s.createdToday }}</span>
+          <span class="stat__label">réservation(s) aujourd'hui</span>
+        </li>
+        <li class="stat">
+          <span class="stat__value">{{ s.total }}</span>
+          <span class="stat__label">réservations au total</span>
+        </li>
+        <li class="stat">
+          <span class="stat__value">{{ s.confirmed }}</span>
+          <span class="stat__label">confirmées</span>
+        </li>
+        <li class="stat">
+          <span class="stat__value">{{ s.pending }}</span>
+          <span class="stat__label">en attente</span>
+        </li>
+        <li class="stat stat--warning">
+          <span class="stat__value">{{ s.expirationRate | percent: '1.0-1' }}</span>
+          <span class="stat__label">taux d'expiration ({{ s.expired }} expirée(s))</span>
+        </li>
+      </ul>
+    } @else if (stats.isLoading()) {
+      <p role="status">Chargement des indicateurs…</p>
+    } @else if (stats.error()) {
+      <p class="error" role="alert">Impossible de charger les indicateurs.</p>
+    }
+  </section>
+
+  <!-- ========== Réservations ========== -->
+  <section aria-labelledby="reservations-title">
+    <div class="section-header">
+      <h2 id="reservations-title">Réservations</h2>
+
+      <div class="filter">
+        <label for="status-filter">Statut</label>
+        <select id="status-filter" (change)="onStatusChange($event)">
+          <option value="" [selected]="query().status === ''">Tous les statuts</option>
+          @for (status of statuses; track status.value) {
+            <option [value]="status.value" [selected]="query().status === status.value">{{ status.label }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    @if (reservationPage(); as page) {
+      <!-- aria-busy : signale aux lecteurs d'écran que le tableau est en cours de mise à jour -->
+      <div class="table-wrapper" [attr.aria-busy]="reservations.isLoading()">
+        <table class="admin-table">
+          <caption class="visually-hidden">Liste des réservations, {{ page.totalElements }} au total</caption>
+          <thead>
+            <tr>
+              <th scope="col" [attr.aria-sort]="ariaSort('createdAt')">
+                <button type="button" class="sort-button" (click)="sortBy('createdAt')">
+                  Date
+                  <span aria-hidden="true">{{ ariaSort('createdAt') === 'ascending' ? '▲' : ariaSort('createdAt') === 'descending' ? '▼' : '' }}</span>
+                </button>
+              </th>
+              <th scope="col">Événement</th>
+              <th scope="col" [attr.aria-sort]="ariaSort('seats')">
+                <button type="button" class="sort-button" (click)="sortBy('seats')">
+                  Places
+                  <span aria-hidden="true">{{ ariaSort('seats') === 'ascending' ? '▲' : ariaSort('seats') === 'descending' ? '▼' : '' }}</span>
+                </button>
+              </th>
+              <th scope="col">Statut</th>
+              <th scope="col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (reservation of page.content; track reservation.id) {
+              <tr>
+                <td>{{ reservation.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                <td>{{ eventTitle(reservation.eventId) }}</td>
+                <td>{{ reservation.seats }}</td>
+                <td>
+                  <span class="badge" [attr.data-status]="reservation.status">{{ statusLabel(reservation.status) }}</span>
+                </td>
+                <td>
+                  @if (canCancel(reservation)) {
+                    <button type="button" class="action-button" (click)="cancel(reservation)">
+                      Annuler<span class="visually-hidden"> la réservation du {{ reservation.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="empty">Aucune réservation ne correspond à ce filtre.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (page.totalPages > 1) {
+        <nav class="pagination" aria-label="Pagination des réservations">
+          <button type="button" [disabled]="query().page <= 1" (click)="goToPage(query().page - 1)">Précédente</button>
+          <span aria-current="page">Page {{ query().page }} sur {{ page.totalPages }}</span>
+          <button type="button" [disabled]="query().page >= page.totalPages" (click)="goToPage(query().page + 1)">Suivante</button>
+        </nav>
+      }
+    } @else if (reservations.isLoading()) {
+      <p role="status">Chargement des réservations…</p>
+    } @else if (reservations.error()) {
+      <p class="error" role="alert">Impossible de charger les réservations.</p>
+    }
+  </section>
+
+  <!-- ========== Événements ========== -->
+  <section aria-labelledby="events-title">
+    <h2 id="events-title">Événements à venir</h2>
+
+    <div class="table-wrapper">
+      <table class="admin-table">
+        <caption class="visually-hidden">Événements à venir et état des réservations</caption>
+        <thead>
+          <tr>
+            <th scope="col">Titre</th>
+            <th scope="col">Date</th>
+            <th scope="col">Places restantes</th>
+            <th scope="col">Réservations</th>
+            <th scope="col"><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (event of events.value(); track event.id) {
+            <tr>
+              <td>{{ event.title }}</td>
+              <td>{{ event.date | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ event.availableSeats }} / {{ event.totalSeats }}</td>
+              <td>
+                <span class="badge" [attr.data-status]="event.status">{{ event.status === 'CLOSED' ? 'Clôturées' : 'Ouvertes' }}</span>
+              </td>
+              <td>
+                @if (event.status === 'OPEN') {
+                  <button type="button" class="action-button" (click)="close(event)">
+                    Clôturer<span class="visually-hidden"> les réservations de {{ event.title }}</span>
+                  </button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="empty">Aucun événement à venir.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>

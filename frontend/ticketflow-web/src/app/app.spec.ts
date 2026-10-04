@@ -13,7 +13,7 @@ describe('App', () => {
 
   beforeEach(async () => {
     authService = jasmine.createSpyObj<AuthService>('AuthService', [
-      'isLoggedIn', 'getUsername', 'login', 'logout', 'register',
+      'isLoggedIn', 'getUsername', 'login', 'logout', 'register', 'hasRole',
     ]);
 
     await TestBed.configureTestingModule({
@@ -97,6 +97,20 @@ describe('App', () => {
 
       expect(navLink(element, 'Accueil')?.getAttribute('aria-current')).toBe('page');
       expect(navLink(element, 'Événements')?.hasAttribute('aria-current')).toBeFalse();
+    });
+
+    it('cache le lien "Tableau de bord" à un utilisateur non admin', async () => {
+      authService.hasRole.and.returnValue(false);
+      const element = await renderAt('/');
+
+      expect(navLink(element, 'Tableau de bord')).toBeUndefined();
+    });
+
+    it('affiche le lien "Tableau de bord" à un admin', async () => {
+      authService.hasRole.and.callFake((role) => role === 'ADMIN');
+      const element = await renderAt('/');
+
+      expect(navLink(element, 'Tableau de bord')?.getAttribute('href')).toBe('/admin');
     });
   });
 });

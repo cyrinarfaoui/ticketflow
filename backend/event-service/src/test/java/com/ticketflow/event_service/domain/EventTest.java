@@ -152,4 +152,44 @@ public class EventTest {
         )).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("catégorie");
     }
+
+    @Test
+    void un_nouvel_evenement_est_ouvert_aux_reservations() {
+        assertThat(newEvent().getStatus()).isEqualTo(EventStatus.OPEN);
+    }
+
+    @Test
+    void un_evenement_cloture_refuse_les_reservations() {
+        Event event = newEvent();
+        event.close();
+
+        assertThat(event.getStatus()).isEqualTo(EventStatus.CLOSED);
+        assertThatThrownBy(() -> event.book(1))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("clôturées");
+    }
+
+    @Test
+    void un_evenement_cloture_accepte_encore_les_annulations() {
+        Event event = newEvent();
+        event.book(5);
+        event.close();
+
+        event.release(5);
+
+        assertThat(event.getAvailableSeats()).isEqualTo(50);
+    }
+
+    @Test
+    void on_ne_peut_pas_cloturer_deux_fois() {
+        Event event = newEvent();
+        event.close();
+
+        assertThatThrownBy(event::close).isInstanceOf(IllegalStateException.class);
+    }
+
+    private static Event newEvent() {
+        return new Event(UUID.randomUUID(), "Concert de jazz", "Description", "Tunis",
+                EventCategory.CONCERT, LocalDateTime.now().plusDays(30), 50);
+    }
 }

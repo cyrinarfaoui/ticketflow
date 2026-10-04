@@ -100,7 +100,8 @@
     background-color: #d97706;
   }
 
-  &[data-status='full'] {
+  &[data-status='full'],
+  &[data-status='closed'] {
     background-color: #9ca3af;
   }
 }
@@ -117,6 +118,11 @@
 
   &--full {
     color: var(--color-error);
+    font-weight: 600;
+  }
+
+  &--closed {
+    color: #374151;
     font-weight: 600;
   }
 }

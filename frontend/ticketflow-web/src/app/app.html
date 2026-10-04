@@ -13,6 +13,13 @@
       routerLinkActive="is-active"
       ariaCurrentWhenActive="page"
     >Événements</a>
+    @if (authService.hasRole('ADMIN')) {
+      <a
+        routerLink="/admin"
+        routerLinkActive="is-active"
+        ariaCurrentWhenActive="page"
+      >Tableau de bord</a>
+    }
   </nav>
 
   <div class="app-auth">

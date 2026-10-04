@@ -13,7 +13,11 @@ export interface EventResponse {
   date: string;
   totalSeats: number;
   availableSeats: number;
+  status: EventStatus;
 }
+
+// OPEN : réservations ouvertes ; CLOSED : clôturées par l'administrateur
+export type EventStatus = 'OPEN' | 'CLOSED';
 
 // Filtres de recherche du catalogue (tous facultatifs ; dates au format AAAA-MM-JJ)
 export interface EventSearchFilters {

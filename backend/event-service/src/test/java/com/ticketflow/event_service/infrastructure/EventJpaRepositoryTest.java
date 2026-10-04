@@ -1,6 +1,7 @@
 package com.ticketflow.event_service.infrastructure;
 
 import com.ticketflow.event_service.domain.EventCategory;
+import com.ticketflow.event_service.domain.EventStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,8 +65,23 @@ class EventJpaRepositoryTest {
         assertThat(titres).isEmpty();
     }
 
+    @Test
+    void places_disponibles_exclut_les_evenements_clotures() {
+        save("Festival clôturé", EventCategory.FESTIVAL, NOW.plusDays(3), 10, EventStatus.CLOSED);
+
+        List<String> tous = titres(repository.search(null, null, EventCategory.FESTIVAL, false, NOW, NO_END));
+        List<String> disponibles = titres(repository.search(null, null, EventCategory.FESTIVAL, true, NOW, NO_END));
+
+        assertThat(tous).containsExactly("Festival clôturé"); // toujours visible dans le catalogue
+        assertThat(disponibles).isEmpty();                  // mais pas "disponible"
+    }
+
     private void save(String title, EventCategory category, LocalDateTime date, int availableSeats) {
-        repository.save(new EventEntity(UUID.randomUUID(), title, "", "Tunis", category, date, 10, availableSeats));
+        save(title, category, date, availableSeats, EventStatus.OPEN);
+    }
+
+    private void save(String title, EventCategory category, LocalDateTime date, int availableSeats, EventStatus status) {
+        repository.save(new EventEntity(UUID.randomUUID(), title, "", "Tunis", category, date, 10, availableSeats, status));
     }
 
     private static List<String> titres(List<EventEntity> events) {
