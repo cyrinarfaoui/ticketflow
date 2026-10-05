@@ -1,12 +1,15 @@
 package com.ticketflow.event_service.infrastructure;
 
 import com.ticketflow.event_service.domain.EventCategory;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface EventJpaRepository extends JpaRepository<EventEntity, UUID> {
@@ -25,4 +28,10 @@ public interface EventJpaRepository extends JpaRepository<EventEntity, UUID> {
                              @Param("availableOnly") boolean availableOnly,
                              @Param("start") LocalDateTime start,
                              @Param("end") LocalDateTime end);
+
+    // SELECT ... FOR UPDATE : la ligne reste verrouillée jusqu'au commit de la transaction.
+    // Les autres transactions qui veulent la même ligne attendent leur tour.
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT e FROM EventEntity e WHERE e.id = :id")
+    Optional<EventEntity> findByIdForUpdate(@Param("id") UUID id);
 }

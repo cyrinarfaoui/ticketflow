@@ -100,7 +100,7 @@ class EventServiceTest {
     @Test
     void cloture_l_evenement_et_l_enregistre() {
         Event event = new Event(UUID.randomUUID(), "Concert", "", "Tunis", EventCategory.CONCERT, NOW.plusDays(5), 50);
-        when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
+        when(eventRepository.findByIdForUpdate(event.getId())).thenReturn(Optional.of(event));
         when(eventRepository.save(any(Event.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         service.closeEvent(event.getId());
@@ -114,7 +114,7 @@ class EventServiceTest {
     @Test
     void cloturer_un_evenement_inconnu_renvoie_une_erreur_introuvable() {
         UUID inconnu = UUID.randomUUID();
-        when(eventRepository.findById(inconnu)).thenReturn(Optional.empty());
+        when(eventRepository.findByIdForUpdate(inconnu)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.closeEvent(inconnu)).isInstanceOf(NoSuchElementException.class);
     }
