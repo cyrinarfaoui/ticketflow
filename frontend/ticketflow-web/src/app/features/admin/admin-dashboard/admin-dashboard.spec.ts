@@ -255,6 +255,7 @@ describe('AdminDashboard (intégration)', () => {
 
       rows()[0].querySelector('button')!.click();
 
+      expect(window.confirm).toHaveBeenCalled();
       httpMock.expectNone(`${API_BASE_URL}/reservations/r1/cancel`);
     });
 
