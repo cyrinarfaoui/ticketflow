@@ -3,6 +3,7 @@ package com.ticketflow.event_service.application;
 import com.ticketflow.event_service.application.port.out.EventRepository;
 import com.ticketflow.event_service.domain.Event;
 import com.ticketflow.event_service.domain.EventCategory;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -60,15 +61,25 @@ public class EventService {
                 .orElseThrow(() -> new NoSuchElementException("Événement introuvable : " + id));
     }
 
+
+
+    @Transactional
     public Event bookSeats(UUID eventId, int seats) {
-        Event event = getEvent(eventId);
+        Event event = getEventForUpdate(eventId);
         event.book(seats);
         return eventRepository.save(event);
     }
 
+    @Transactional
     public Event closeEvent(UUID eventId) {
-        Event event = getEvent(eventId);
+        Event event = getEventForUpdate(eventId);
         event.close();
         return eventRepository.save(event);
+    }
+
+    // Toute modification de l'événement passe par le verrou : sinon une écriture concurrente peut l'écraser
+    private Event getEventForUpdate(UUID id) {
+        return eventRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new NoSuchElementException("Événement introuvable : " + id));
     }
 }

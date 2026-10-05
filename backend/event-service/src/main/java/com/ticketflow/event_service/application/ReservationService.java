@@ -43,7 +43,8 @@ public class ReservationService {
 
     @Transactional
     public Reservation createReservation(UUID eventId, String userId, int seats) {
-        Event event = eventRepository.findById(eventId)
+        // Verrou sur la ligne de l'événement : les réservations simultanées passent une par une
+        Event event = eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new NoSuchElementException("Événement introuvable : " + eventId));
 
         event.book(seats);
@@ -74,7 +75,7 @@ public class ReservationService {
         reservation.cancel();
         reservationRepository.save(reservation);
 
-        Event event = eventRepository.findById(reservation.getEventId())
+        Event event = eventRepository.findByIdForUpdate(reservation.getEventId())
                 .orElseThrow(() -> new NoSuchElementException("Événement introuvable : " + reservation.getEventId()));
         event.release(reservation.getSeats());
         eventRepository.save(event);

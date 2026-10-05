@@ -95,7 +95,7 @@ class ReservationServiceTest {
         concert.book(2);
         Reservation reservation = new Reservation(UUID.randomUUID(), concert.getId(), "user-1", 2);
         when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
-        when(eventRepository.findById(concert.getId())).thenReturn(Optional.of(concert));
+        when(eventRepository.findByIdForUpdate(concert.getId())).thenReturn(Optional.of(concert));
 
         Reservation cancelled = service.cancelReservation(reservation.getId(), "user-1", false);
 
@@ -122,7 +122,7 @@ class ReservationServiceTest {
         Event concert = event("Concert");
         Reservation reservation = new Reservation(UUID.randomUUID(), concert.getId(), "user-1", 1);
         when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
-        when(eventRepository.findById(concert.getId())).thenReturn(Optional.of(concert));
+        when(eventRepository.findByIdForUpdate(concert.getId())).thenReturn(Optional.of(concert));
 
         Reservation cancelled = service.cancelReservation(reservation.getId(), "admin-42", true);
 

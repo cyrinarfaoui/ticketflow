@@ -46,4 +46,9 @@ public class EventRepositoryAdapter implements EventRepository {
                               boolean availableOnly, LocalDateTime start, LocalDateTime end) {
         return jpaRepository.search(title, location, category, availableOnly, start, end).stream().map(EventMapper::toDomain).toList();
     }
+
+    @Override
+    public Optional<Event> findByIdForUpdate(UUID id) {
+        return jpaRepository.findByIdForUpdate(id).map(EventMapper::toDomain);
+    }
 }

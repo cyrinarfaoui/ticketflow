@@ -18,4 +18,7 @@ public interface EventRepository {
     List<Event> findAllById(Collection<UUID> ids);
     List<Event> search(String title, String location, EventCategory category,
                        boolean availableOnly, LocalDateTime start, LocalDateTime end);
+
+    // Lit l'événement en le verrouillant jusqu'à la fin de la transaction (réservations concurrentes)
+    Optional<Event> findByIdForUpdate(UUID id);
 }
