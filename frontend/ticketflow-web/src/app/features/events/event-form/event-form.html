@@ -1,13 +1,15 @@
-
 <main>
-  <h2>Créer un événement</h2>
+  <h1>Créer un événement</h1>
 
   <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
     <div class="field">
+      @let titleError = error('title');
       <label for="title">Titre</label>
-      <input id="title" type="text" formControlName="title" />
-      @if (form.controls.title.invalid && form.controls.title.touched) {
-        <p class="error" role="alert">Le titre doit contenir au moins 3 caractères.</p>
+      <input id="title" type="text" formControlName="title"
+             [attr.aria-invalid]="titleError ? true : null"
+             [attr.aria-describedby]="titleError ? 'title-error' : null" />
+      @if (titleError) {
+        <p id="title-error" class="error" role="alert">{{ titleError }}</p>
       }
     </div>
 
@@ -17,42 +19,60 @@
     </div>
 
     <div class="field">
+      @let locationError = error('location');
       <label for="location">Lieu</label>
-      <input id="location" type="text" formControlName="location" placeholder="Ex. Théâtre municipal, Tunis" />
-      @if (form.controls.location.invalid && form.controls.location.touched) {
-        <p class="error" role="alert">Le lieu est obligatoire.</p>
+      <input id="location" type="text" formControlName="location" placeholder="Ex. Théâtre municipal, Tunis"
+             [attr.aria-invalid]="locationError ? true : null"
+             [attr.aria-describedby]="locationError ? 'location-error' : null" />
+      @if (locationError) {
+        <p id="location-error" class="error" role="alert">{{ locationError }}</p>
       }
     </div>
 
     <div class="field">
+      @let categoryError = error('category');
       <label for="category">Catégorie</label>
-      <select id="category" formControlName="category">
+      <select id="category" formControlName="category"
+              [attr.aria-invalid]="categoryError ? true : null"
+              [attr.aria-describedby]="categoryError ? 'category-error' : null">
         <option value="" disabled>Choisir une catégorie</option>
         @for (category of categories; track category.value) {
           <option [value]="category.value">{{ category.label }}</option>
         }
       </select>
-      @if (form.controls.category.invalid && form.controls.category.touched) {
-        <p class="error" role="alert">La catégorie est obligatoire.</p>
+      @if (categoryError) {
+        <p id="category-error" class="error" role="alert">{{ categoryError }}</p>
       }
     </div>
 
     <div class="field">
+      @let dateError = error('date');
       <label for="date">Date et heure</label>
-      <input id="date" type="datetime-local" formControlName="date" />
-      @if (form.controls.date.invalid && form.controls.date.touched) {
-        <p class="error" role="alert">La date est obligatoire.</p>
+      <input id="date" type="datetime-local" formControlName="date"
+             [attr.aria-invalid]="dateError ? true : null"
+             [attr.aria-describedby]="dateError ? 'date-error' : null" />
+      @if (dateError) {
+        <p id="date-error" class="error" role="alert">{{ dateError }}</p>
       }
     </div>
 
     <div class="field">
+      @let seatsError = error('totalSeats');
       <label for="totalSeats">Nombre total de places</label>
-      <input id="totalSeats" type="number" min="1" formControlName="totalSeats" />
-      @if (form.controls.totalSeats.invalid && form.controls.totalSeats.touched) {
-        <p class="error" role="alert">Il faut au moins 1 place.</p>
+      <input id="totalSeats" type="number" min="1" max="100000" formControlName="totalSeats"
+             [attr.aria-invalid]="seatsError ? true : null"
+             [attr.aria-describedby]="seatsError ? 'totalSeats-error' : null" />
+      @if (seatsError) {
+        <p id="totalSeats-error" class="error" role="alert">{{ seatsError }}</p>
       }
     </div>
 
-    <button type="submit">Créer l'événement</button>
+        @if (serverError()) {
+      <p class="error" role="alert">{{ serverError() }}</p>
+    }
+
+    <button type="submit" [disabled]="submitting()">
+      {{ submitting() ? 'Création en cours…' : "Créer l'événement" }}
+    </button>
   </form>
 </main>

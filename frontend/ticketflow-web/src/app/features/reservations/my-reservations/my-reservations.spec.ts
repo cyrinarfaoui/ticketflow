@@ -147,6 +147,7 @@ describe('MyReservations (intégration)', () => {
 
       element.querySelector<HTMLButtonElement>('.cancel-button')!.click();
 
+      expect(window.confirm).toHaveBeenCalled();
       httpMock.expectNone(`${API_BASE_URL}/reservations/r1/cancel`);
     });
 
