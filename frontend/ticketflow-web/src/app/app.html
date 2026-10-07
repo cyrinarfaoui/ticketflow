@@ -18,7 +18,13 @@
         routerLink="/mes-reservations"
         routerLinkActive="is-active"
         ariaCurrentWhenActive="page"
-      >Mes réservations</a>
+      >Mes réservations
+        @if (reservationStore.activeCount() > 0) {
+          <span class="nav-badge">
+            {{ reservationStore.activeCount() }}<span class="visually-hidden"> en cours</span>
+          </span>
+        }
+      </a>
     }
     @if (authService.hasRole('ADMIN')) {
       <a
@@ -31,7 +37,7 @@
 
   <div class="app-auth">
     @if (authService.isLoggedIn()) {
-      <span class="user-info">Connecté : {{ authService.getUsername() }}</span>
+      <span class="user-info">Connecté : {{ authService.username() }}</span>
       <button type="button" (click)="authService.logout()">Se déconnecter</button>
     } @else {
       <button type="button" (click)="authService.register()">S'inscrire</button>

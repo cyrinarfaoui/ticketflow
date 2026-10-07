@@ -10,7 +10,7 @@ describe('Hero', () => {
 
   beforeEach(async () => {
     authService = jasmine.createSpyObj<AuthService>('AuthService', [
-      'isLoggedIn', 'getUsername', 'login', 'register',
+      'isLoggedIn', 'username', 'login', 'register',
     ]);
 
     await TestBed.configureTestingModule({
@@ -25,7 +25,7 @@ describe('Hero', () => {
   // Prépare l'état de connexion AVANT de créer le composant
   function render(loggedIn: boolean, username?: string): void {
     authService.isLoggedIn.and.returnValue(loggedIn);
-    authService.getUsername.and.returnValue(username);
+    authService.username.and.returnValue(username);
     fixture = TestBed.createComponent(Hero);
     element = fixture.nativeElement;
     fixture.detectChanges();

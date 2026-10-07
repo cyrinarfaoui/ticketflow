@@ -227,6 +227,9 @@ describe('EventList (intégration)', () => {
       const refresh = searchRequest();
       expect(refresh.request.params.get('location')).toBe('Tunis');
       refresh.flush([EVENTS[0]]);
+
+      // Le store partagé se recharge : le badge "Mes réservations" du header sera à jour
+      httpMock.expectOne(`${API_BASE_URL}/reservations/me`).flush([]);
     });
 
     it('laisse le 401 à la bannière globale : aucun message dans la liste', () => {

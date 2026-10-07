@@ -1,10 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { HttpErrorResponse, httpResource } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
-import { API_BASE_URL } from '../../../core/config/api.config';
 import { AuthService } from '../../../core/services/auth.service';
-import { ReservationService } from '../../../core/services/reservation.service';
+import { ReservationStore } from '../../../core/stores/reservation.store';
 import { MyReservation, ReservationStatus } from '../../../core/models/reservation';
 
 // Chaque statut a un libellé ET une icône : l'information ne repose jamais sur la couleur seule (RGAA)
@@ -21,25 +20,25 @@ const STATUS_DISPLAY: Record<ReservationStatus, { label: string; icon: string }>
   styleUrl: './my-reservations.scss',
   templateUrl: './my-reservations.html',
 })
-export class MyReservations {
+export class MyReservations implements OnInit {
 
   private readonly authService = inject(AuthService);
-  private readonly reservationService = inject(ReservationService);
 
   // Lu dans le JWT, côté navigateur : UNIQUEMENT pour l'affichage.
   // Le jeton peut être lu (et même modifié) par l'utilisateur : le backend ne fait confiance qu'à sa signature.
-  protected readonly username = this.authService.getUsername();
+  protected readonly username = this.authService.username;
 
-  // Pas d'identifiant dans l'URL : le backend sait qui on est grâce au jeton
-  protected readonly reservations = httpResource<MyReservation[]>(
-    () => `${API_BASE_URL}/reservations/me`,
-    { defaultValue: [] },
-  );
+  // La même copie des réservations que le header et le reste de l'application
+  protected readonly store = inject(ReservationStore);
 
   // Message d'erreur métier (409…) ; les erreurs techniques (401, 403, 5xx) sont dans la bannière globale
   readonly errorMessage = signal<string | null>(null);
   // Confirmation annoncée par les lecteurs d'écran (role="status")
   readonly successMessage = signal<string | null>(null);
+
+  ngOnInit(): void {
+    this.store.load(); // données fraîches à l'ouverture de la page
+  }
 
   statusDisplay(status: ReservationStatus) {
     return STATUS_DISPLAY[status];
@@ -56,11 +55,10 @@ export class MyReservations {
     this.errorMessage.set(null);
     this.successMessage.set(null);
 
-    this.reservationService.cancelReservation(reservation.id).subscribe({
-      next: () => {
-        this.successMessage.set(`Votre réservation pour « ${reservation.eventTitle} » a été annulée.`);
-        this.reservations.reload();
-      },
+    this.store.cancel(reservation.id).subscribe({
+      // Plus de reload : le store a déjà mis l'écran à jour (optimiste)
+      next: () => this.successMessage.set(`Votre réservation pour « ${reservation.eventTitle} » a été annulée.`),
+      // Le store a déjà fait le rollback ; on explique pourquoi
       error: (err: HttpErrorResponse) => this.errorMessage.set(err.error?.error ?? null),
     });
   }
