@@ -152,6 +152,31 @@ describe('AdminDashboard (intégration)', () => {
       expect(rows()[0].textContent).toContain('Aucune réservation ne correspond à ce filtre.');
     });
 
+    it('ne fait pas confiance à l\'URL : des valeurs invalides donnent les valeurs par défaut', async () => {
+      await open('/?status=PIRATE&page=-5&sort=password,drop');
+
+      const req = reservationsRequest();
+      expect(req.request.params.has('status')).toBeFalse();          // statut inconnu ignoré
+      expect(req.request.params.get('page')).toBe('0');              // page négative → première page
+      expect(req.request.params.get('sort')).toBe('createdAt,desc'); // tri inconnu → tri par défaut
+      req.flush(page([]));
+      httpMock.expectOne(`${API_BASE_URL}/reservations/stats`).flush(STATS);
+      httpMock.expectOne(`${API_BASE_URL}/events`).flush(EVENTS);
+    });
+
+    it('trie par places et inverse le sens au second clic', async () => {
+      await open();
+      await respond();
+
+      await navigateBy(() => button('Places').click());
+      expect(reservationsRequest().request.params.get('sort')).toBe('seats,desc');
+
+      await navigateBy(() => button('Places').click());
+      const req = httpMock.match((r) => r.url === `${API_BASE_URL}/reservations`);
+      expect(req[req.length - 1].request.params.get('sort')).toBe('seats,asc');
+      req.forEach((r) => r.flush(page([PENDING])));
+    });
+
     it('reprend filtre, page et tri depuis un lien partagé', async () => {
       await open('/?status=CONFIRMED&page=2&sort=seats,asc');
 
