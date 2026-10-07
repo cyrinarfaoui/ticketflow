@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { App } from './app';
 import { AuthService } from './core/services/auth.service';
+import { ReservationStore } from './core/stores/reservation.store';
 
 // Une page vide : pour tester le header, on n'a pas besoin des vraies pages
 @Component({ template: '' })
@@ -10,11 +11,18 @@ class BlankPage {}
 
 describe('App', () => {
   let authService: jasmine.SpyObj<AuthService>;
+  // Faux store : le header ne fait que LIRE activeCount ; on contrôle sa valeur avec activeCount.set(...)
+  let reservationStore: { activeCount: WritableSignal<number>; load: jasmine.Spy; clear: jasmine.Spy };
 
   beforeEach(async () => {
     authService = jasmine.createSpyObj<AuthService>('AuthService', [
-      'isLoggedIn', 'getUsername', 'login', 'logout', 'register', 'hasRole',
+      'isLoggedIn', 'username', 'login', 'logout', 'register', 'hasRole',
     ]);
+    reservationStore = {
+      activeCount: signal(0),
+      load: jasmine.createSpy('load'),
+      clear: jasmine.createSpy('clear'),
+    };
 
     await TestBed.configureTestingModule({
       imports: [App],
@@ -24,6 +32,7 @@ describe('App', () => {
           { path: 'evenements', component: BlankPage },
         ]),
         { provide: AuthService, useValue: authService },
+        { provide: ReservationStore, useValue: reservationStore },
       ],
     }).compileComponents();
   });
@@ -57,7 +66,7 @@ describe('App', () => {
 
     it('affiche le nom de l\'utilisateur connecté', async () => {
       authService.isLoggedIn.and.returnValue(true);
-      authService.getUsername.and.returnValue('cyrine');
+      authService.username.and.returnValue('cyrine');
       const element = await renderAt('/');
 
       expect(element.textContent).toContain('Connecté : cyrine');
@@ -125,6 +134,48 @@ describe('App', () => {
       const element = await renderAt('/');
 
       expect(navLink(element, 'Tableau de bord')?.getAttribute('href')).toBe('/admin');
+    });
+  });
+
+  describe('badge des réservations (store partagé)', () => {
+
+    function badge(element: HTMLElement): HTMLElement | null {
+      return element.querySelector('.nav-badge');
+    }
+
+    it('affiche le nombre de réservations en cours, lisible par un lecteur d\'écran', async () => {
+      authService.isLoggedIn.and.returnValue(true);
+      reservationStore.activeCount.set(2);
+
+      const element = await renderAt('/');
+
+      expect(badge(element)?.textContent?.trim()).toBe('2 en cours');
+    });
+
+    it('n\'affiche pas de badge quand il n\'y a aucune réservation en cours', async () => {
+      authService.isLoggedIn.and.returnValue(true);
+
+      const element = await renderAt('/');
+
+      expect(badge(element)).toBeNull();
+    });
+
+    it('charge les réservations quand l\'utilisateur est connecté', async () => {
+      authService.isLoggedIn.and.returnValue(true);
+
+      await renderAt('/');
+
+      expect(reservationStore.load).toHaveBeenCalled();
+      expect(reservationStore.clear).not.toHaveBeenCalled();
+    });
+
+    it('vide le store quand personne n\'est connecté', async () => {
+      authService.isLoggedIn.and.returnValue(false);
+
+      await renderAt('/');
+
+      expect(reservationStore.clear).toHaveBeenCalled();
+      expect(reservationStore.load).not.toHaveBeenCalled();
     });
   });
 });

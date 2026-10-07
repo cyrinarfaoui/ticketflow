@@ -29,8 +29,8 @@ describe('MyReservations (intégration)', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(() => {
-    const authService = jasmine.createSpyObj<AuthService>('AuthService', ['getUsername']);
-    authService.getUsername.and.returnValue('cyrine');
+    const authService = jasmine.createSpyObj<AuthService>('AuthService', ['username']);
+    authService.username.and.returnValue('cyrine');
 
     TestBed.configureTestingModule({
       imports: [MyReservations],
@@ -125,22 +125,31 @@ describe('MyReservations (intégration)', () => {
 
   describe('annulation', () => {
 
-    it('annule après confirmation, annonce le succès et recharge la liste', async () => {
+      it('affiche "Annulée" immédiatement, avant même la réponse du serveur (optimiste)', async () => {
       spyOn(window, 'confirm').and.returnValue(true);
       await respond([reservation()]);
 
       element.querySelector<HTMLButtonElement>('.cancel-button')!.click();
+      fixture.detectChanges();
 
-      const cancel = httpMock.expectOne(`${API_BASE_URL}/reservations/r1/cancel`);
-      expect(cancel.request.method).toBe('POST');
-      cancel.flush({ id: 'r1', eventId: 'e1', seats: 2, status: 'CANCELLED', createdAt: '2026-10-04T08:30:00Z' });
-      TestBed.tick();
-
-      await respond([reservation({ status: 'CANCELLED' })]);
-      expect(element.querySelector('[role="status"].success')?.textContent).toContain('a été annulée');
+      // La requête est partie mais n'a PAS encore répondu : l'écran est déjà à jour
+      expect(element.querySelector('.status')?.textContent).toContain('Annulée');
       expect(element.querySelector('.cancel-button')).toBeNull();
+      httpMock.expectOne(`${API_BASE_URL}/reservations/r1/cancel`).flush({});
     });
 
+    it('annonce le succès sans recharger toute la liste', async () => {
+      spyOn(window, 'confirm').and.returnValue(true);
+      await respond([reservation()]);
+
+      element.querySelector<HTMLButtonElement>('.cancel-button')!.click();
+      httpMock.expectOne(`${API_BASE_URL}/reservations/r1/cancel`).flush({});
+      fixture.detectChanges();
+
+      expect(element.querySelector('[role="status"].success')?.textContent).toContain('a été annulée');
+      httpMock.expectNone(`${API_BASE_URL}/reservations/me`);   // pas de rechargement inutile
+    });
+    
     it('ne fait rien si l\'utilisateur refuse la confirmation', async () => {
       spyOn(window, 'confirm').and.returnValue(false);
       await respond([reservation()]);
@@ -163,6 +172,7 @@ describe('MyReservations (intégration)', () => {
       fixture.detectChanges();
 
       expect(element.querySelector('[role="alert"]')?.textContent).toContain('Cette réservation est déjà annulée');
+      expect(element.querySelector('.status')?.textContent).toContain('En attente');   // retour en arrière
     });
   });
 });

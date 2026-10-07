@@ -6,6 +6,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, Subject, catchError, combineLatest, debounceTime, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs';
 import { EventService } from '../../../core/services/event.service';
 import { ReservationService } from '../../../core/services/reservation.service';
+import { ReservationStore } from '../../../core/stores/reservation.store';
 import { AuthService } from '../../../core/services/auth.service';
 import { EVENT_CATEGORIES, EventCategory } from '../../../core/models/event-category';
 import { EventCard } from '../event-card/event-card';
@@ -31,6 +32,7 @@ export class EventList implements OnInit {
   protected readonly authService = inject(AuthService);
   protected readonly eventService = inject(EventService);
   private readonly reservationService = inject(ReservationService);
+  private readonly reservationStore = inject(ReservationStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -86,7 +88,10 @@ export class EventList implements OnInit {
     this.errorMessage.set(null);
 
     this.reservationService.createReservation(eventId, seats).subscribe({
-      next: () => this.refresh$.next(),
+      next: () => {
+        this.refresh$.next();          // places restantes à jour dans le catalogue
+        this.reservationStore.load();  // badge "Mes réservations" à jour dans le header
+      },
       error: (err: HttpErrorResponse) => {
         // Les erreurs techniques (réseau, 401, 403, 5xx) sont affichées par la bannière globale (errorInterceptor).
         // Ici, on n'affiche que les erreurs métier renvoyées par l'API, par exemple "Pas assez de places".

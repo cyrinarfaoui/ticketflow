@@ -3,7 +3,7 @@
   <p class="hero__subtitle">Concerts, théâtre, conférences : réservez vos places en quelques clics.</p>
 
   @if (authService.isLoggedIn()) {
-    <p class="hero__greeting">Bonjour {{ authService.getUsername() }}</p>
+    <p class="hero__greeting">Bonjour {{ authService.username() }}</p>
     <div class="hero__actions">
            <a class="hero__button hero__button--primary" routerLink="/evenements">Voir les événements</a>
     </div>

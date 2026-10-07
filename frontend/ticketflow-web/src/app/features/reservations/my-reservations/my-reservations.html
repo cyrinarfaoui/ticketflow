@@ -1,7 +1,7 @@
 <main class="my-reservations">
   <h1>Mes réservations</h1>
-  @if (username) {
-    <p class="intro">Bonjour {{ username }}, voici l'historique de vos réservations.</p>
+    @if (username()) {
+    <p class="intro">Bonjour {{ username() }}, voici l'historique de vos réservations.</p>
   }
 
   <!-- Toujours présent dans la page, pour que les lecteurs d'écran annoncent le message quand il apparaît -->
@@ -11,14 +11,14 @@
     <p class="error" role="alert">{{ errorMessage() }}</p>
   }
 
-  @if (reservations.isLoading() && reservations.value().length === 0) {
+  @if (store.status() === 'loading' && store.reservations().length === 0) {
     <p role="status">Chargement de vos réservations…</p>
-  } @else if (reservations.error()) {
+  } @else if (store.status() === 'error') {
     <p class="error" role="alert">Impossible de charger vos réservations.</p>
   } @else {
-    @if (reservations.value().length > 0) {
+    @if (store.reservations().length > 0) {
       <ul class="reservation-list" role="list">
-        @for (reservation of reservations.value(); track reservation.id) {
+        @for (reservation of store.reservations(); track reservation.id) {
           @let status = statusDisplay(reservation.status);
           <li>
             <article class="reservation" [attr.data-status]="reservation.status" [attr.aria-labelledby]="'title-' + reservation.id">
