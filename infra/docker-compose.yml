@@ -100,6 +100,29 @@ services:
     ports:
       - "8083:8083"
 
+  api-gateway:
+    build: ../backend/api-gateway
+    container_name: ticketflow-api-gateway
+    depends_on:
+      - event-service
+      - auth-service
+      - keycloak
+    environment:
+      # Dans Docker, les services s'appellent par leur NOM (la "découverte" de Docker Compose)
+      EVENT_SERVICE_URL: http://event-service:8080
+      AUTH_SERVICE_URL: http://auth-service:8082
+      # Le jeton contient l'émetteur "localhost:8081" (vu par le navigateur)…
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8081/realms/ticketflow
+      # … mais DANS Docker, les clés publiques de Keycloak se récupèrent via son nom de conteneur
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/ticketflow/protocol/openid-connect/certs
+      APP_CORS_ALLOWED_ORIGIN: http://localhost:4200
+    extra_hosts:
+      - "localhost:host-gateway"
+    ports:
+      - "8000:8000"
+
+
+
 volumes:
   postgres_event_data:
   keycloak_data:

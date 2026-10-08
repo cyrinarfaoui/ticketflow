@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: api-gateway
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # La gateway vérifie la signature des jetons avec les clés publiques de Keycloak
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/ticketflow}
+  cloud:
+    gateway:
+      server:
+        webflux:
+          # Appliqués à TOUTES les routes
+          default-filters:
+            # Le service répond aussi avec ses propres en-têtes CORS : on n'en garde qu'un exemplaire
+            - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+          routes:
+            # /api/events/** et /api/reservations/** → event-service
+            - id: event-service
+              uri: ${EVENT_SERVICE_URL:http://localhost:8080}
+              predicates:
+                - Path=/api/events/**,/api/reservations/**
+              filters:
+                - StripPrefix=1          # /api/events/42 → /events/42
+
+            # /api/auth/** → auth-service
+            - id: auth-service
+              uri: ${AUTH_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                - StripPrefix=1
+
+server:
+  port: 8000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+app:
+  cors:
+    allowed-origin: ${APP_CORS_ALLOWED_ORIGIN:http://localhost:4200}

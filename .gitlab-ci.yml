@@ -88,7 +88,7 @@ build:backend:
   stage: build
   parallel:
     matrix:
-      - SERVICE: [auth-service, event-service, notification-service]
+      - SERVICE: [ api-gateway, auth-service, event-service, notification-service ]
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests package
   artifacts:
@@ -122,6 +122,11 @@ test:notification-service:
   variables:
     SERVICE: notification-service
 
+test:api-gateway:
+  extends: .backend-test
+  variables:
+    SERVICE: api-gateway
+
 # event-service démarre Liquibase au lancement : il lui faut une vraie base Postgres
 test:event-service:
   extends: .backend-test
@@ -150,6 +155,7 @@ sonarcloud:
     - test:auth-service
     - test:event-service
     - test:notification-service
+    - test:api-gateway
   variables:
     SONAR_USER_HOME: "$CI_PROJECT_DIR/.sonar"
     GIT_DEPTH: "0"
@@ -175,7 +181,7 @@ package:
     DOCKER_TLS_CERTDIR: "/certs"
   parallel:
     matrix:
-      - APP: [auth-service, event-service, notification-service]
+      - APP: [api-gateway, auth-service, event-service, notification-service]
         CONTEXT: backend
       - APP: ticketflow-web
         CONTEXT: frontend
