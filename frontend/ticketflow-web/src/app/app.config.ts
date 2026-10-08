@@ -8,7 +8,8 @@ import localeFr from '@angular/common/locales/fr';
 import { errorInterceptor } from './core/interceptors/error-interceptor';
 
 const urlCondition = createInterceptorCondition({
-  urlPattern: /^(http:\/\/localhost:8080|http:\/\/localhost:8082)(\/.*)?$/i,
+    // Le jeton n'est joint QU'AUX appels vers notre gateway : jamais vers un site tiers
+  urlPattern: /^http:\/\/localhost:8000(\/.*)?$/i,
   bearerPrefix: 'Bearer'
 });
 
