@@ -8,6 +8,8 @@ import com.ticketflow.event_service.domain.Reservation;
 import com.ticketflow.event_service.domain.ReservationStats;
 import com.ticketflow.event_service.domain.ReservationStatus;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,8 @@ import java.util.stream.Collectors;
 @Service
 public class ReservationService {
 
+    private static final Logger log = LoggerFactory.getLogger(ReservationService.class);
+
     private final EventRepository eventRepository;
     private final ReservationRepository reservationRepository;
     private final ReservationEventPublisher eventPublisher;
@@ -41,8 +45,12 @@ public class ReservationService {
         this.clock = clock;
     }
 
+    /**
+     * Saga, étape 1 : réserve les places (PENDING) et demande le paiement en publiant reservation.created.
+     * paymentMethod est un JETON de moyen de paiement (pm_…), jamais un numéro de carte.
+     */
     @Transactional
-    public Reservation createReservation(UUID eventId, String userId, int seats) {
+    public Reservation createReservation(UUID eventId, String userId, int seats, String paymentMethod) {
         // Verrou sur la ligne de l'événement : les réservations simultanées passent une par une
         Event event = eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new NoSuchElementException("Événement introuvable : " + eventId));
@@ -53,9 +61,48 @@ public class ReservationService {
         Reservation reservation = new Reservation(UUID.randomUUID(), eventId, userId, seats);
         Reservation saved = reservationRepository.save(reservation);
 
-        eventPublisher.publishCreated(saved);
+        eventPublisher.publishCreated(saved, event.priceFor(seats), paymentMethod);
 
         return saved;
+    }
+
+    /**
+     * Saga, chemin "succès" (payment.completed) : la réservation est confirmée.
+     * Idempotent : un message rejoué sur une réservation déjà confirmée ne change rien.
+     */
+    @Transactional
+    public void confirmPayment(UUID reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new NoSuchElementException("Réservation introuvable : " + reservationId));
+        if (!reservation.isPending()) {
+            log.info("Paiement confirmé pour la réservation {} déjà {} : rien à faire", reservationId, reservation.getStatus());
+            return;
+        }
+        reservation.confirm();
+        reservationRepository.save(reservation);
+    }
+
+    /**
+     * Saga, chemin "échec" (payment.failed) : COMPENSATION.
+     * On défait l'étape 1 : la réservation est annulée avec le motif, et les places sont rendues à l'événement.
+     * Idempotent : un message rejoué ne rend pas les places une deuxième fois.
+     */
+    @Transactional
+    public void rejectPayment(UUID reservationId, String declineCode) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new NoSuchElementException("Réservation introuvable : " + reservationId));
+        if (!reservation.isPending()) {
+            log.info("Paiement refusé pour la réservation {} déjà {} : rien à faire", reservationId, reservation.getStatus());
+            return;
+        }
+        reservation.failPayment(declineCode);
+        reservationRepository.save(reservation);
+
+        // Verrou : la compensation modifie l'événement, comme une réservation ou une annulation (ticket #16)
+        Event event = eventRepository.findByIdForUpdate(reservation.getEventId())
+                .orElseThrow(() -> new NoSuchElementException("Événement introuvable : " + reservation.getEventId()));
+        event.release(reservation.getSeats());
+        eventRepository.save(event);
     }
 
     /**

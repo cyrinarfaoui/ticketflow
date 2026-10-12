@@ -15,7 +15,8 @@ public class EventMapper {
                 event.getDate(),
                 event.getTotalSeats(),
                 event.getAvailableSeats(),
-                event.getStatus()
+                event.getStatus(),
+                event.getPriceCents()
         );
     }
 
@@ -28,7 +29,8 @@ public class EventMapper {
                 entity.getLocation(),
                 entity.getCategory(),
                 entity.getDate(),
-                entity.getTotalSeats()
+                entity.getTotalSeats(),
+                entity.getPriceCents()
         );
         if (entity.getAvailableSeats() < entity.getTotalSeats()) {
             event.book(entity.getTotalSeats() - entity.getAvailableSeats());

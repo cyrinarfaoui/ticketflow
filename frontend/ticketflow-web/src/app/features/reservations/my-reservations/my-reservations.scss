@@ -143,3 +143,10 @@
     align-items: flex-start;
   }
 }
+
+// Motif du refus de paiement (saga) : texte, pas seulement une couleur (RGAA)
+.payment-failure {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: #b91c1c;
+}

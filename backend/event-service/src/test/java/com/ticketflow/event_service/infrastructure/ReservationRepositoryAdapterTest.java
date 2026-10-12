@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pagination, tri et filtre des réservations, contre une vraie base Postgres.
  * @Transactional : tout (y compris le deleteAll) est annulé à la fin de chaque test.
  */
-@SpringBootTest
+@SpringBootTest(properties = "spring.kafka.listener.auto-startup=false")
 @Transactional
 class ReservationRepositoryAdapterTest {
 

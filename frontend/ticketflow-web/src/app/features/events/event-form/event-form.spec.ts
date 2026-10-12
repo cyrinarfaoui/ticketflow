@@ -34,6 +34,7 @@ describe('EventForm', () => {
       category: 'CONCERT',
       date: '2030-12-15T20:00',
       totalSeats: 100,
+      price: 19.99,
     });
   }
 
@@ -63,6 +64,7 @@ describe('EventForm', () => {
     const req = httpMock.expectOne(`${API_BASE_URL}/events`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body.category).toBe('CONCERT');
+    expect(req.request.body.priceCents).toBe(1999);   // dinars -> centimes, arrondi
     req.flush({});
   });
 

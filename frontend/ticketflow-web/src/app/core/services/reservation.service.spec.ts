@@ -19,11 +19,11 @@ describe('ReservationService', () => {
   afterEach(() => httpMock.verify());
 
   it('crée une réservation avec POST /reservations?eventId=…', () => {
-    service.createReservation('e1', 3).subscribe();
+    service.createReservation('e1', 3, 'pm_card_visa').subscribe();
 
     const req = httpMock.expectOne(`${API_BASE_URL}/reservations?eventId=e1`);
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ seats: 3 });
+    expect(req.request.body).toEqual({ seats: 3, paymentMethod: 'pm_card_visa' });
     req.flush({});
   });
 

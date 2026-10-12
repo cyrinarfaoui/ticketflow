@@ -19,7 +19,7 @@ public class EventTest {
                 "Théâtre municipal, Tunis",
                 EventCategory.CONCERT,
                 LocalDateTime.now().plusDays(30),
-                100
+                100, 5_000
         );
 
         assertThat(event.getAvailableSeats()).isEqualTo(100);
@@ -35,7 +35,7 @@ public class EventTest {
                 "Théâtre municipal, Tunis",
                 EventCategory.CONCERT,
                 LocalDateTime.now().plusDays(30),
-                0
+                0, 5_000
         )).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("nombre total de places");
     }
@@ -49,7 +49,7 @@ public class EventTest {
                 "Théâtre municipal, Tunis",
                 EventCategory.CONCERT,
                 LocalDateTime.now().plusDays(30),
-                -5
+                -5, 5_000
         )).isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -62,7 +62,7 @@ public class EventTest {
                 "Théâtre municipal, Tunis",
                 EventCategory.CONCERT,
                 LocalDateTime.now().plusDays(30),
-                50
+                50, 5_000
         )).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("titre");
     }
@@ -76,7 +76,7 @@ public class EventTest {
                 "  ",
                 EventCategory.CONCERT,
                 LocalDateTime.now().plusDays(30),
-                50
+                50, 5_000
         )).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("lieu");
     }
@@ -91,7 +91,7 @@ public class EventTest {
                 "Théâtre municipal, Tunis",
                 EventCategory.CONCERT,
                 LocalDateTime.now().plusDays(30),
-                100
+                100, 5_000
         );
 
         event.book(3);
@@ -108,7 +108,7 @@ public class EventTest {
                 "Théâtre municipal, Tunis",
                 EventCategory.CONCERT,
                 LocalDateTime.now().plusDays(30),
-                5
+                5, 5_000
         );
 
         assertThatThrownBy(() -> event.book(10))
@@ -125,7 +125,7 @@ public class EventTest {
                 "Théâtre municipal, Tunis",
                 EventCategory.CONCERT,
                 LocalDateTime.now().plusDays(30),
-                100
+                100, 5_000
         );
         event.book(10);
 
@@ -148,7 +148,7 @@ public class EventTest {
                 "Théâtre municipal, Tunis",
                 null,
                 LocalDateTime.now().plusDays(30),
-                50
+                50, 5_000
         )).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("catégorie");
     }
@@ -190,6 +190,22 @@ public class EventTest {
 
     private static Event newEvent() {
         return new Event(UUID.randomUUID(), "Concert de jazz", "Description", "Tunis",
-                EventCategory.CONCERT, LocalDateTime.now().plusDays(30), 50);
+                EventCategory.CONCERT, LocalDateTime.now().plusDays(30), 50, 5_000);
+    }
+
+    // ---------- Prix (ticket #2) ----------
+
+    @Test
+    void calcule_le_montant_a_payer_pour_un_nombre_de_places() {
+        Event event = newEvent();   // 5 000 centimes = 50,00 TND la place
+
+        assertThat(event.priceFor(3)).isEqualTo(15_000L);
+    }
+
+    @Test
+    void refuse_un_prix_nul() {
+        assertThatThrownBy(() -> new Event(UUID.randomUUID(), "Concert", "", "Tunis",
+                EventCategory.CONCERT, LocalDateTime.now().plusDays(30), 50, 0))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

@@ -8,7 +8,7 @@ const EVENTS_URL = `${API_BASE_URL}/events`;
 
 const CONCERT: EventResponse = {
   id: 'e1', title: 'Concert de jazz', description: '', location: 'Tunis', category: 'CONCERT',
-  date: '2026-12-15T20:00:00', totalSeats: 100, availableSeats: 53, status: 'OPEN',
+  date: '2026-12-15T20:00:00', totalSeats: 100, availableSeats: 53, status: 'OPEN', priceCents: 5000, currency: 'TND',
 };
 
 describe('EventService', () => {
@@ -78,7 +78,7 @@ describe('EventService', () => {
   it('crée un événement avec POST /events', () => {
     const payload = {
       title: 'Concert de jazz', description: '', location: 'Tunis', category: 'CONCERT' as const,
-      date: '2026-12-15T19:00:00.000Z', totalSeats: 100,
+      date: '2026-12-15T19:00:00.000Z', totalSeats: 100, priceCents: 5000,
     };
 
     service.createEvent(payload).subscribe();

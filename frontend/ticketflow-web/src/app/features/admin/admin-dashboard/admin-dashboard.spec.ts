@@ -15,11 +15,11 @@ const STATS: ReservationStats = {
 const EVENTS: EventResponse[] = [
   {
     id: 'e1', title: 'Concert de jazz', description: '', location: 'Tunis', category: 'CONCERT',
-    date: '2026-12-15T20:00:00', totalSeats: 100, availableSeats: 53, status: 'OPEN',
+    date: '2026-12-15T20:00:00', totalSeats: 100, availableSeats: 53, status: 'OPEN', priceCents: 5000, currency: 'TND',
   },
   {
     id: 'e2', title: 'Festival', description: '', location: 'Tabarka', category: 'FESTIVAL',
-    date: '2026-11-20T19:00:00', totalSeats: 250, availableSeats: 10, status: 'CLOSED',
+    date: '2026-11-20T19:00:00', totalSeats: 250, availableSeats: 10, status: 'CLOSED', priceCents: 5000, currency: 'TND',
   },
 ];
 

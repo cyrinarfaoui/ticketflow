@@ -19,6 +19,7 @@ function reservation(overrides: Partial<MyReservation> = {}): MyReservation {
     seats: 2,
     status: 'PENDING',
     createdAt: '2026-10-04T08:30:00Z',
+    paymentFailureCode: null,
     ...overrides,
   };
 }
@@ -106,6 +107,12 @@ describe('MyReservations (intégration)', () => {
 
     const hasButton = items().map((item) => item.querySelector('.cancel-button') !== null);
     expect(hasButton).toEqual([true, true, false, false]);
+  });
+
+  it("affiche le motif d'un paiement refusé", async () => {
+    await respond([reservation({ status: 'CANCELLED', paymentFailureCode: 'insufficient_funds' })]);
+
+    expect(items()[0].querySelector('.payment-failure')?.textContent).toContain('Paiement refusé : fonds insuffisants');
   });
 
   it('affiche un état vide avec un lien vers le catalogue', async () => {

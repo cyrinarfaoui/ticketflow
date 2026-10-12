@@ -35,6 +35,9 @@ public class ReservationEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "payment_failure_code", length = 40)
+    private String paymentFailureCode;
+
     // Raccourcis gardés pour les tests existants (réservation sans propriétaire)
     public ReservationEntity(UUID id, UUID eventId, int seats, ReservationStatus status) {
         this(id, eventId, null, seats, status, Instant.now());
@@ -45,6 +48,12 @@ public class ReservationEntity {
     }
 
     public ReservationEntity(UUID id, UUID eventId, String userId, int seats, ReservationStatus status, Instant createdAt) {
+        this(id, eventId, userId, seats, status, createdAt, null);
+    }
+
+    public ReservationEntity(UUID id, UUID eventId, String userId, int seats, ReservationStatus status, Instant createdAt,
+                             String paymentFailureCode) {
+        this.paymentFailureCode = paymentFailureCode;
         this.id = id;
         this.eventId = eventId;
         this.userId = userId;

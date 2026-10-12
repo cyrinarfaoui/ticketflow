@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Prix d'une place, en CENTIMES (bigint) : jamais de nombre à virgule pour de l'argent.
+        Les événements créés avant ce changeset reçoivent un prix par défaut de 50,00 TND.
+    -->
+    <changeSet id="008-add-price-to-events" author="cyrine">
+        <addColumn tableName="events">
+            <column name="price_cents" type="bigint" defaultValueNumeric="5000">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <sql>
+            ALTER TABLE events ADD CONSTRAINT events_price_positive CHECK (price_cents > 0)
+        </sql>
+
+        <rollback>
+            <dropColumn tableName="events" columnName="price_cents"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

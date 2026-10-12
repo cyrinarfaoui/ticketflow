@@ -1,3 +1,4 @@
+import { ReserveRequest } from '../../../core/models/payment';
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, ParamMap, Params, Router, RouterLink } from '@angular/router';
@@ -84,10 +85,10 @@ export class EventList implements OnInit {
     this.filters.reset();
   }
 
-  reserve(eventId: string, seats: number): void {
+  reserve(eventId: string, request: ReserveRequest): void {
     this.errorMessage.set(null);
 
-    this.reservationService.createReservation(eventId, seats).subscribe({
+    this.reservationService.createReservation(eventId, request.seats, request.paymentMethod).subscribe({
       next: () => {
         this.refresh$.next();          // places restantes à jour dans le catalogue
         this.reservationStore.load();  // badge "Mes réservations" à jour dans le header

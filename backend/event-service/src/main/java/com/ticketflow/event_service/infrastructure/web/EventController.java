@@ -31,7 +31,7 @@ public class EventController {
     public ResponseEntity<EventResponse> createEvent(@Valid @RequestBody CreateEventRequest request) {
         var event = eventService.createEvent(
                 request.title(), request.description(), request.location(), request.category(),
-                request.date(), request.totalSeats()
+                request.date(), request.totalSeats(), request.priceCents()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(EventResponse.from(event));
     }

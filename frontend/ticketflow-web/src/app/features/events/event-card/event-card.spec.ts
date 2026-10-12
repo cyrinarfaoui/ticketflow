@@ -4,6 +4,7 @@ import { registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
 import { EventCard } from './event-card';
 import { EventResponse } from '../../../core/services/event.service';
+import { ReserveRequest } from '../../../core/models/payment';
 
 // FABRIQUE : crée un événement de test valide, dont on peut changer certains champs
 function createEvent(overrides: Partial<EventResponse> = {}): EventResponse {
@@ -16,7 +17,7 @@ function createEvent(overrides: Partial<EventResponse> = {}): EventResponse {
     date: '2026-12-15T20:00:00',
     totalSeats: 100,
     availableSeats: 53,
-    status: 'OPEN',
+    status: 'OPEN', priceCents: 5000, currency: 'TND',
     ...overrides,
   };
 }
@@ -117,11 +118,11 @@ describe('EventCard', () => {
 
   describe('interaction', () => {
 
-    it('émet le nombre de places choisi au clic sur Réserver', () => {
+    it('émet le nombre de places et la carte choisis au clic sur Réserver', () => {
       // Arrange
       render(createEvent());
-      let emitted: number | undefined;
-      component.reserve.subscribe((seats) => (emitted = seats));
+      let emitted: ReserveRequest | undefined;
+      component.reserve.subscribe((request) => (emitted = request));
 
       // Act : l'utilisateur tape 3 puis clique
       const input = element.querySelector<HTMLInputElement>('input[type="number"]')!;
@@ -129,8 +130,33 @@ describe('EventCard', () => {
       input.dispatchEvent(new Event('input'));
       element.querySelector<HTMLButtonElement>('button')!.click();
 
-      // Assert
-      expect(emitted).toBe(3);
+      // Assert : Visa par défaut
+      expect(emitted).toEqual({ seats: 3, paymentMethod: 'pm_card_visa' });
+    });
+
+    it('envoie le JETON de la carte de test choisie, jamais un numéro de carte', () => {
+      render(createEvent());
+      let emitted: ReserveRequest | undefined;
+      component.reserve.subscribe((request) => (emitted = request));
+
+      const select = element.querySelector<HTMLSelectElement>('select')!;
+      select.value = 'pm_card_insufficientFunds';
+      select.dispatchEvent(new Event('change'));
+      element.querySelector<HTMLButtonElement>('.reserve-row button')!.click();
+
+      expect(emitted?.paymentMethod).toBe('pm_card_insufficientFunds');
+    });
+
+    it("affiche le prix d'une place et le total à payer", () => {
+      render(createEvent({ priceCents: 2550 }));
+
+      const input = element.querySelector<HTMLInputElement>('input[type="number"]')!;
+      input.value = '2';
+      input.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      expect(element.querySelector('.event-price')?.textContent).toContain('25,50 TND');
+      expect(element.querySelector('.reserve-total')?.textContent).toContain('51,00 TND');
     });
   });
 

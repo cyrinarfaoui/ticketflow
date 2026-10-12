@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * (celle de docker-compose en local, le service postgres:16 en CI).
  * Chaque test est annulé à la fin grâce à @Transactional : la base n'est pas modifiée.
  */
-@SpringBootTest
+@SpringBootTest(properties = "spring.kafka.listener.auto-startup=false")
 @Transactional
 class EventJpaRepositoryTest {
 
@@ -81,7 +81,7 @@ class EventJpaRepositoryTest {
     }
 
     private void save(String title, EventCategory category, LocalDateTime date, int availableSeats, EventStatus status) {
-        repository.save(new EventEntity(UUID.randomUUID(), title, "", "Tunis", category, date, 10, availableSeats, status));
+        repository.save(new EventEntity(UUID.randomUUID(), title, "", "Tunis", category, date, 10, availableSeats, status, 5_000L));
     }
 
     private static List<String> titres(List<EventEntity> events) {

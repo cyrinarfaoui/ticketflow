@@ -15,6 +15,8 @@ public class Reservation {
     private final int seats;
     private final Instant createdAt;
     private ReservationStatus status;
+    // Code Stripe du refus de paiement (insufficient_funds…), si la réservation a été annulée pour cette raison
+    private String paymentFailureCode;
 
     // Nouvelle réservation : faite maintenant, par un utilisateur identifié (obligatoire)
     public Reservation(UUID id, UUID eventId, String userId, int seats) {
@@ -50,6 +52,22 @@ public class Reservation {
             throw new IllegalStateException("Cette réservation est déjà annulée");
         }
         this.status = ReservationStatus.CANCELLED;
+    }
+
+    /**
+     * Saga, chemin "échec" : le paiement a été refusé, la réservation est annulée.
+     * L'appelant rend ensuite les places à l'événement (compensation).
+     */
+    public void failPayment(String declineCode) {
+        if (status != ReservationStatus.PENDING) {
+            throw new IllegalStateException("Seule une réservation en attente peut échouer au paiement");
+        }
+        this.status = ReservationStatus.CANCELLED;
+        this.paymentFailureCode = declineCode;
+    }
+
+    public boolean isPending() {
+        return status == ReservationStatus.PENDING;
     }
 
     public void expire() {

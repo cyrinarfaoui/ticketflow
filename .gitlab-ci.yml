@@ -82,13 +82,13 @@ test:frontend:
   before_script:
     - cd backend/$SERVICE
 
-# Compile et package les 3 services en parallèle (un job par service)
+# Compile et package les services en parallèle (un job par service)
 build:backend:
   extends: .backend
   stage: build
   parallel:
     matrix:
-      - SERVICE: [ api-gateway, auth-service, event-service, notification-service ]
+      - SERVICE: [ api-gateway, auth-service, event-service, notification-service, payment-service ]
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests package
   artifacts:
@@ -141,6 +141,20 @@ test:event-service:
     - name: postgres:16
       alias: postgres
 
+# payment-service a SA PROPRE base (une base par microservice) : même principe
+test:payment-service:
+  extends: .backend-test
+  variables:
+    SERVICE: payment-service
+    POSTGRES_DB: paymentdb
+    POSTGRES_USER: ticketflow
+    POSTGRES_PASSWORD: ticketflow
+    SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/paymentdb
+    SPRING_DATASOURCE_PASSWORD: $POSTGRES_PASSWORD
+  services:
+    - name: postgres:16
+      alias: postgres
+
 # =====================================================================
 #  QUALITY : analyse SonarCloud + Quality Gate bloquante
 # =====================================================================
@@ -156,6 +170,7 @@ sonarcloud:
     - test:event-service
     - test:notification-service
     - test:api-gateway
+    - test:payment-service
   variables:
     SONAR_USER_HOME: "$CI_PROJECT_DIR/.sonar"
     GIT_DEPTH: "0"
@@ -181,7 +196,7 @@ package:
     DOCKER_TLS_CERTDIR: "/certs"
   parallel:
     matrix:
-      - APP: [api-gateway, auth-service, event-service, notification-service]
+      - APP: [api-gateway, auth-service, event-service, notification-service, payment-service]
         CONTEXT: backend
       - APP: ticketflow-web
         CONTEXT: frontend

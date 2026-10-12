@@ -50,4 +50,7 @@ public class EventEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private EventStatus status;
+
+    @Column(name = "price_cents", nullable = false)
+    private long priceCents;
 }

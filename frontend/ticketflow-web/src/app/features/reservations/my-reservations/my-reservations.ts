@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ReservationStore } from '../../../core/stores/reservation.store';
 import { MyReservation, ReservationStatus } from '../../../core/models/reservation';
+import { declineLabel } from '../../../core/models/payment';
 
 // Chaque statut a un libellé ET une icône : l'information ne repose jamais sur la couleur seule (RGAA)
 const STATUS_DISPLAY: Record<ReservationStatus, { label: string; icon: string }> = {
@@ -39,6 +40,8 @@ export class MyReservations implements OnInit {
   ngOnInit(): void {
     this.store.load(); // données fraîches à l'ouverture de la page
   }
+
+  readonly declineLabel = declineLabel;
 
   statusDisplay(status: ReservationStatus) {
     return STATUS_DISPLAY[status];

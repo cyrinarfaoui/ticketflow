@@ -16,7 +16,7 @@ class EventMapperTest {
     void relit_un_evenement_cloture_avec_des_places_deja_reservees() {
         // 50 places, 20 déjà réservées, puis clôturé : l'ordre book() puis close() compte dans le mapper
         EventEntity entity = new EventEntity(UUID.randomUUID(), "Concert", "", "Tunis", EventCategory.CONCERT,
-                LocalDateTime.of(2030, 1, 1, 20, 0), 50, 30, EventStatus.CLOSED);
+                LocalDateTime.of(2030, 1, 1, 20, 0), 50, 30, EventStatus.CLOSED, 5_000L);
 
         Event event = EventMapper.toDomain(entity);
 
