@@ -67,6 +67,17 @@
       }
     </div>
 
+    <div class="field">
+      @let priceError = error('price');
+      <label for="price">Prix d'une place (TND)</label>
+      <input id="price" type="number" min="0.01" max="2000" step="0.01" formControlName="price"
+             [attr.aria-invalid]="priceError ? true : null"
+             [attr.aria-describedby]="priceError ? 'price-error' : null" />
+      @if (priceError) {
+        <p id="price-error" class="error" role="alert">{{ priceError }}</p>
+      }
+    </div>
+
         @if (serverError()) {
       <p class="error" role="alert">{{ serverError() }}</p>
     }

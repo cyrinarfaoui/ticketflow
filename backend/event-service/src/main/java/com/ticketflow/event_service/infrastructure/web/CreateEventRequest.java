@@ -15,7 +15,9 @@ public record CreateEventRequest(
         @NotBlank String location,
         @NotNull EventCategory category,
         @NotNull @Future LocalDateTime date,
-        @Positive int totalSeats
+        @Positive int totalSeats,
+        // Prix d'une place en centimes (4500 = 45,00 TND)
+        @Positive long priceCents
 
 ) {
 }

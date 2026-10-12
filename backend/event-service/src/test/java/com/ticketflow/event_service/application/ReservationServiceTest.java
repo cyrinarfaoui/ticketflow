@@ -130,6 +130,69 @@ class ReservationServiceTest {
     }
 
     private static Event event(String title) {
-        return new Event(UUID.randomUUID(), title, "", "Tunis", EventCategory.CONCERT, LocalDateTime.of(2030, 1, 1, 20, 0), 100);
+        return new Event(UUID.randomUUID(), title, "", "Tunis", EventCategory.CONCERT, LocalDateTime.of(2030, 1, 1, 20, 0), 100, 5_000);
+    }
+
+    // ---------- Saga de paiement (ticket #2) ----------
+
+    @Test
+    void publie_le_montant_calcule_et_le_jeton_de_paiement() {
+        Event concert = event("Concert");   // 5 000 centimes la place
+        when(eventRepository.findByIdForUpdate(concert.getId())).thenReturn(Optional.of(concert));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Reservation reservation = service.createReservation(concert.getId(), "user-1", 3, "pm_card_visa");
+
+        verify(eventPublisher).publishCreated(reservation, 15_000L, "pm_card_visa");
+    }
+
+    @Test
+    void paiement_accepte_confirme_la_reservation() {
+        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), "user-1", 2);
+        when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
+
+        service.confirmPayment(reservation.getId());
+
+        assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
+        verify(reservationRepository).save(reservation);
+    }
+
+    @Test
+    void paiement_accepte_rejoue_ne_fait_rien() {
+        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), "user-1", 2);
+        reservation.confirm();
+        when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
+
+        service.confirmPayment(reservation.getId());   // message Kafka livré une 2e fois
+
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void paiement_refuse_annule_et_rend_les_places_compensation() {
+        Event concert = event("Concert");
+        concert.book(2);   // étape 1 de la saga : 98 places restantes
+        Reservation reservation = new Reservation(UUID.randomUUID(), concert.getId(), "user-1", 2);
+        when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
+        when(eventRepository.findByIdForUpdate(concert.getId())).thenReturn(Optional.of(concert));
+
+        service.rejectPayment(reservation.getId(), "insufficient_funds");
+
+        assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
+        assertThat(reservation.getPaymentFailureCode()).isEqualTo("insufficient_funds");
+        assertThat(concert.getAvailableSeats()).isEqualTo(100);   // places rendues
+        verify(eventRepository).save(concert);
+    }
+
+    @Test
+    void paiement_refuse_rejoue_ne_rend_pas_les_places_deux_fois() {
+        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), "user-1", 2);
+        reservation.failPayment("card_declined");   // déjà compensée
+        when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
+
+        service.rejectPayment(reservation.getId(), "card_declined");
+
+        verify(reservationRepository, never()).save(any());
+        verifyNoInteractions(eventRepository);
     }
 }

@@ -33,7 +33,7 @@ public class ReservationController {
                                                                  @Valid @RequestBody CreateReservationRequest request,
                                                                  @AuthenticationPrincipal Jwt jwt) {
         // L'utilisateur vient du JWT vérifié par Spring, JAMAIS du corps de la requête
-        var reservation = reservationService.createReservation(eventId, jwt.getSubject(), request.seats());
+        var reservation = reservationService.createReservation(eventId, jwt.getSubject(), request.seats(), request.paymentMethod());
         return ResponseEntity.status(HttpStatus.CREATED).body(ReservationResponse.from(reservation));
     }
 

@@ -17,9 +17,14 @@ public class Event {
     private final int totalSeats;
     private int availableSeats;
     private EventStatus status;
+    // Prix d'une place, en CENTIMES (jamais de nombre à virgule pour de l'argent), dans la devise CURRENCY
+    private final long priceCents;
+
+    // Une seule devise pour toute la billetterie
+    public static final String CURRENCY = "TND";
 
     public Event(UUID id, String title, String description, String location, EventCategory category,
-                 LocalDateTime date, int totalSeats) {
+                 LocalDateTime date, int totalSeats, long priceCents) {
         if (title == null || title.isBlank()) {
             throw new IllegalArgumentException("Le titre de l'événement ne peut pas être vide");
         }
@@ -35,6 +40,9 @@ public class Event {
         if (totalSeats <= 0) {
             throw new IllegalArgumentException("Le nombre total de places doit être supérieur à 0");
         }
+        if (priceCents <= 0) {
+            throw new IllegalArgumentException("Le prix d'une place doit être supérieur à 0");
+        }
 
         this.id = id;
         this.title = title;
@@ -45,6 +53,12 @@ public class Event {
         this.totalSeats = totalSeats;
         this.availableSeats = totalSeats;
         this.status = EventStatus.OPEN;
+        this.priceCents = priceCents;
+    }
+
+    /** Montant à payer pour un nombre de places, en centimes. */
+    public long priceFor(int seats) {
+        return Math.multiplyExact(priceCents, seats);
     }
 
 

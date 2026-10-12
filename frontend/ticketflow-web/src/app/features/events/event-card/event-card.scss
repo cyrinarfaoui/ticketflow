@@ -128,8 +128,28 @@
 }
 
 // ---------- Zone de réservation (toujours en bas) ----------
+// ---------- Prix ----------
+.event-price {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.event-price__unit {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #4b5563;
+}
+
+.reserve-total {
+  flex-basis: 100%;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
 .reserve-row {
   display: flex;
+  flex-wrap: wrap;   // input + liste des cartes + bouton : passe à la ligne sur mobile
   align-items: center;
   gap: 0.5rem;
   margin-top: auto;
@@ -139,6 +159,15 @@
   label {
     font-size: 0.875rem;
     color: #4b5563;
+  }
+
+  select {
+    flex: 1;
+    min-width: 9rem;
+    padding: 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font: inherit;
   }
 
   input {
@@ -167,6 +196,7 @@
 
   // Contour visible au clavier (Tab) : indispensable pour l'accessibilité
   input:focus-visible,
+  select:focus-visible,
   button:focus-visible {
     outline: 3px solid #93c5fd;
     outline-offset: 2px;

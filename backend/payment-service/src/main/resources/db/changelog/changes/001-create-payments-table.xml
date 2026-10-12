@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="001-create-payments-table" author="cyrine">
+        <createTable tableName="payments">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <!-- Clé d'idempotence : UNE réservation ne peut être payée qu'une seule fois -->
+            <column name="reservation_id" type="uuid">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_payments_reservation"/>
+            </column>
+            <!-- L'argent en centimes entiers : jamais de nombre à virgule pour de l'argent -->
+            <column name="amount_cents" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="currency" type="varchar(3)">
+                <constraints nullable="false"/>
+            </column>
+            <!-- Un jeton de moyen de paiement (pm_…), jamais un numéro de carte -->
+            <column name="payment_method" type="varchar(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="decline_code" type="varchar(40)"/>
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <sql>
+            ALTER TABLE payments
+                ADD CONSTRAINT payments_status_check CHECK (status IN ('SUCCEEDED', 'DECLINED'))
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

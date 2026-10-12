@@ -19,10 +19,11 @@ export class ReservationService {
 
   private readonly http = inject(HttpClient);
 
-  createReservation(eventId: string, seats: number): Observable<ReservationResponse> {
+  // paymentMethod : un jeton pm_… (jamais un numéro de carte)
+  createReservation(eventId: string, seats: number, paymentMethod: string): Observable<ReservationResponse> {
     return this.http.post<ReservationResponse>(
       `${API_BASE_URL}/reservations?eventId=${eventId}`,
-      { seats }
+      { seats, paymentMethod }
     );
   }
 

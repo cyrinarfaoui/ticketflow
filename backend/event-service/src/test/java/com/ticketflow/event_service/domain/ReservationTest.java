@@ -79,4 +79,26 @@ class ReservationTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("utilisateur");
     }
+
+    // ---------- Saga de paiement (ticket #2) ----------
+
+    @Test
+    void echec_de_paiement_annule_la_reservation_avec_le_motif() {
+        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), "user-1", 2);
+
+        reservation.failPayment("insufficient_funds");
+
+        assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
+        assertThat(reservation.getPaymentFailureCode()).isEqualTo("insufficient_funds");
+        assertThat(reservation.isPending()).isFalse();
+    }
+
+    @Test
+    void une_reservation_confirmee_ne_peut_plus_echouer_au_paiement() {
+        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), "user-1", 2);
+        reservation.confirm();
+
+        assertThatThrownBy(() -> reservation.failPayment("card_declined"))
+                .isInstanceOf(IllegalStateException.class);
+    }
 }

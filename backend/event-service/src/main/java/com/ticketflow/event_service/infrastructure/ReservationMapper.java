@@ -11,7 +11,8 @@ public class ReservationMapper {
                 reservation.getUserId(),
                 reservation.getSeats(),
                 reservation.getStatus(),
-                reservation.getCreatedAt()
+                reservation.getCreatedAt(),
+                reservation.getPaymentFailureCode()
         );
     }
 
@@ -21,7 +22,14 @@ public class ReservationMapper {
         );
         switch (entity.getStatus()) {
             case CONFIRMED -> reservation.confirm();
-            case CANCELLED -> reservation.cancel();
+            // Annulée pour refus de paiement : on rejoue failPayment pour retrouver le motif
+            case CANCELLED -> {
+                if (entity.getPaymentFailureCode() != null) {
+                    reservation.failPayment(entity.getPaymentFailureCode());
+                } else {
+                    reservation.cancel();
+                }
+            }
             case EXPIRED -> reservation.expire();
             case PENDING -> { /* état initial : rien à faire */ }
         }

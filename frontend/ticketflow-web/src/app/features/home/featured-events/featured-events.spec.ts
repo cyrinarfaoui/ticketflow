@@ -16,7 +16,7 @@ function event(id: string, date: string, availableSeats = 10): EventResponse {
     date,
     totalSeats: 100,
     availableSeats,
-    status: 'OPEN',
+    status: 'OPEN', priceCents: 5000, currency: 'TND',
   };
 }
 

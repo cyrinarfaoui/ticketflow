@@ -28,8 +28,8 @@ public class EventService {
     }
 
     public Event createEvent(String title, String description, String location, EventCategory category,
-                             LocalDateTime date, int totalSeats) {
-        Event event = new Event(UUID.randomUUID(), title, description, location, category, date, totalSeats);
+                             LocalDateTime date, int totalSeats, long priceCents) {
+        Event event = new Event(UUID.randomUUID(), title, description, location, category, date, totalSeats, priceCents);
         return eventRepository.save(event);
     }
 

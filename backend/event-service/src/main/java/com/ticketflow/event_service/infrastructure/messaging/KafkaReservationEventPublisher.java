@@ -20,8 +20,8 @@ public class KafkaReservationEventPublisher implements ReservationEventPublisher
     }
 
     @Override
-    public void publishCreated(Reservation reservation) {
-        ReservationCreatedEvent event = ReservationCreatedEvent.from(reservation);
+    public void publishCreated(Reservation reservation, long amountCents, String paymentMethod) {
+        ReservationCreatedEvent event = ReservationCreatedEvent.from(reservation, amountCents, paymentMethod);
         kafkaTemplate.send(TOPIC, event.reservationId(), event)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {

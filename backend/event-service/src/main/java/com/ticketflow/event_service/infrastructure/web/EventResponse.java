@@ -16,13 +16,16 @@ public record EventResponse(
         LocalDateTime date,
         int totalSeats,
         int availableSeats,
-        EventStatus status
+        EventStatus status,
+        long priceCents,
+        String currency
 ) {
 
     public static EventResponse from(Event event) {
         return new EventResponse(
                 event.getId(), event.getTitle(), event.getDescription(), event.getLocation(), event.getCategory(),
-                event.getDate(), event.getTotalSeats(), event.getAvailableSeats(), event.getStatus()
+                event.getDate(), event.getTotalSeats(), event.getAvailableSeats(), event.getStatus(),
+                event.getPriceCents(), Event.CURRENCY
         );
     }
 }

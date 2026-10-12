@@ -99,7 +99,7 @@ class EventServiceTest {
 
     @Test
     void cloture_l_evenement_et_l_enregistre() {
-        Event event = new Event(UUID.randomUUID(), "Concert", "", "Tunis", EventCategory.CONCERT, NOW.plusDays(5), 50);
+        Event event = new Event(UUID.randomUUID(), "Concert", "", "Tunis", EventCategory.CONCERT, NOW.plusDays(5), 50, 5_000);
         when(eventRepository.findByIdForUpdate(event.getId())).thenReturn(Optional.of(event));
         when(eventRepository.save(any(Event.class))).thenAnswer(invocation -> invocation.getArgument(0));
 

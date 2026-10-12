@@ -14,6 +14,8 @@ export interface EventResponse {
   totalSeats: number;
   availableSeats: number;
   status: EventStatus;
+  priceCents: number;   // prix d'UNE place, en centimes (entier : jamais de float pour de l'argent)
+  currency: string;
 }
 
 // OPEN : réservations ouvertes ; CLOSED : clôturées par l'administrateur
@@ -36,6 +38,7 @@ export interface CreateEventPayload {
   category: EventCategory;
   date: string;
   totalSeats: number;
+  priceCents: number;
 }
 
 @Injectable({ providedIn: 'root' })

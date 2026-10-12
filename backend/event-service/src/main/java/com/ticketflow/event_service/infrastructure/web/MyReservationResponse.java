@@ -21,7 +21,9 @@ public record MyReservationResponse(
         LocalDateTime eventDate,
         int seats,
         ReservationStatus status,
-        Instant createdAt
+        Instant createdAt,
+        // Code Stripe du refus de paiement (insufficient_funds…) si la saga a annulé la réservation
+        String paymentFailureCode
 ) {
     public static MyReservationResponse from(ReservationWithEvent item) {
         Reservation reservation = item.reservation();
@@ -34,7 +36,8 @@ public record MyReservationResponse(
                 event != null ? event.getDate() : null,
                 reservation.getSeats(),
                 reservation.getStatus(),
-                reservation.getCreatedAt()
+                reservation.getCreatedAt(),
+                reservation.getPaymentFailureCode()
         );
     }
 }

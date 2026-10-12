@@ -15,6 +15,7 @@
       <p class="event-time">{{ e.date | date: 'EEE HH:mm' }}</p>
     </div>
   </header>
+  <p class="event-price">{{ price() }} <span class="event-price__unit">/ place</span></p>
     <p class="event-description">{{ e.description }}</p>
 
   <div class="gauge" aria-hidden="true">
@@ -52,7 +53,21 @@
         [value]="seats()"
         (input)="onSeatsChange(seatsInput.value)"
       />
-      <button type="button" (click)="onReserve()">Réserver</button>
+      <label [for]="'card-' + e.id">Carte</label>
+      <select
+        #cardSelect
+        [id]="'card-' + e.id"
+        [value]="paymentMethod()"
+        (change)="onPaymentMethodChange(cardSelect.value)"
+      >
+        @for (card of testCards; track card.token) {
+          <option [value]="card.token">{{ card.label }}</option>
+        }
+      </select>
+      <button type="button" (click)="onReserve()">
+        Réserver<span class="visually-hidden"> pour {{ total() }}</span>
+      </button>
+      <p class="reserve-total" aria-hidden="true">Total : {{ total() }}</p>
     </div>
   }
 </article>

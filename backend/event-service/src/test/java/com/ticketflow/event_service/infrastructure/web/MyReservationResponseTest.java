@@ -18,7 +18,7 @@ class MyReservationResponseTest {
 
     @Test
     void reprend_la_reservation_et_les_infos_de_l_evenement() {
-        Event event = new Event(UUID.randomUUID(), "Concert", "", "Tunis", EventCategory.CONCERT, DATE, 100);
+        Event event = new Event(UUID.randomUUID(), "Concert", "", "Tunis", EventCategory.CONCERT, DATE, 100, 5_000);
         Reservation reservation = new Reservation(UUID.randomUUID(), event.getId(), "user-1", 2);
 
         MyReservationResponse response = MyReservationResponse.from(new ReservationWithEvent(reservation, event));

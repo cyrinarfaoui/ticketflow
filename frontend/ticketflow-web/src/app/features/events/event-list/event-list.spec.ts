@@ -11,11 +11,11 @@ import { API_BASE_URL } from '../../../core/config/api.config';
 const EVENTS: EventResponse[] = [
   {
     id: '1', title: 'Concert de jazz', description: 'Soirée jazz', location: 'Tunis', category: 'CONCERT',
-    date: '2026-12-15T20:00:00', totalSeats: 100, availableSeats: 53, status: 'OPEN',
+    date: '2026-12-15T20:00:00', totalSeats: 100, availableSeats: 53, status: 'OPEN', priceCents: 5000, currency: 'TND',
   },
   {
     id: '2', title: 'Festival', description: 'Plein air', location: 'Tabarka', category: 'FESTIVAL',
-    date: '2026-10-20T19:00:00', totalSeats: 250, availableSeats: 250, status: 'OPEN',
+    date: '2026-10-20T19:00:00', totalSeats: 250, availableSeats: 250, status: 'OPEN', priceCents: 5000, currency: 'TND',
   },
 ];
 
@@ -221,7 +221,7 @@ describe('EventList (intégration)', () => {
 
       const reservation = httpMock.expectOne(`${API_BASE_URL}/reservations?eventId=1`);
       expect(reservation.request.method).toBe('POST');
-      expect(reservation.request.body).toEqual({ seats: 1 });
+      expect(reservation.request.body).toEqual({ seats: 1, paymentMethod: 'pm_card_visa' });
       reservation.flush({ id: 'r1', eventId: '1', seats: 1, status: 'PENDING' });
 
       const refresh = searchRequest();

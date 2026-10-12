@@ -10,7 +10,17 @@ services:
       - "5432:5432"
     volumes:
       - postgres_event_data:/var/lib/postgresql/data
-
+  postgres-payment-service:
+    image: postgres:16
+    container_name: ticketflow-postgres-payment
+    environment:
+      POSTGRES_DB: paymentdb
+      POSTGRES_USER: ticketflow
+      POSTGRES_PASSWORD: ticketflow
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_payment_data:/var/lib/postgresql/data
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
@@ -100,6 +110,20 @@ services:
     ports:
       - "8083:8083"
 
+  payment-service:
+    build: ../backend/payment-service
+    container_name: ticketflow-payment-service
+    depends_on:
+      - postgres-payment-service
+      - kafka
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-payment-service:5432/paymentdb
+      SPRING_DATASOURCE_USERNAME: ticketflow
+      SPRING_DATASOURCE_PASSWORD: ticketflow
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+    ports:
+      - "8084:8084"
+
   api-gateway:
     build: ../backend/api-gateway
     container_name: ticketflow-api-gateway
@@ -126,3 +150,4 @@ services:
 volumes:
   postgres_event_data:
   keycloak_data:
+  postgres_payment_data:

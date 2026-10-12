@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 50 utilisateurs se ruent sur un événement de 10 places, AU MÊME INSTANT.
  * Pas de @Transactional ici : chaque thread doit vraiment écrire en base, comme en production.
  */
-@SpringBootTest
+@SpringBootTest(properties = "spring.kafka.listener.auto-startup=false")
 class OverbookingConcurrencyTest {
 
     private static final int SEATS = 10;
@@ -62,7 +62,7 @@ class OverbookingConcurrencyTest {
     @Test
     void cinquante_utilisateurs_pour_dix_places_ne_provoquent_pas_de_surreservation() throws Exception {
         eventRepository.save(new EventEntity(eventId, "Concert très demandé", "", "Tunis", EventCategory.CONCERT,
-                LocalDateTime.now().plusDays(10), SEATS, SEATS, EventStatus.OPEN));
+                LocalDateTime.now().plusDays(10), SEATS, SEATS, EventStatus.OPEN, 5_000L));
 
         ExecutorService pool = Executors.newFixedThreadPool(USERS);   // 50 threads
         CountDownLatch startSignal = new CountDownLatch(1);           // le portillon de départ
@@ -74,7 +74,7 @@ class OverbookingConcurrencyTest {
             tasks.add(pool.submit(() -> {
                 startSignal.await();                                  // chaque thread attend le départ
                 try {
-                    reservationService.createReservation(eventId, userId, 1);
+                    reservationService.createReservation(eventId, userId, 1, "pm_card_visa");
                     successes.incrementAndGet();
                 } catch (RuntimeException refused) {
                     // "Pas assez de places" : c'est le comportement attendu pour 40 utilisateurs

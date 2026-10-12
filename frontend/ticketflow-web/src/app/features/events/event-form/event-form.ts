@@ -33,7 +33,9 @@ export class EventForm {
     location: ['', Validators.required],
     category: ['' as EventCategory | '', Validators.required],
     date: ['', [Validators.required, futureDate()]],
-    totalSeats: [1, [Validators.required, Validators.min(1), Validators.max(100_000)]]
+    totalSeats: [1, [Validators.required, Validators.min(1), Validators.max(100_000)]],
+    // Saisi en dinars (ex. 50,5) pour l'humain ; envoyé en centimes (entier) au backend
+    price: [null as number | null, [Validators.required, Validators.min(0.01), Validators.max(2_000)]]
   });
 
     // Tous les messages d'erreur du formulaire, au même endroit. L'ordre = la priorité.
@@ -52,6 +54,11 @@ export class EventForm {
       required: 'Il faut au moins 1 place.',
       min: 'Il faut au moins 1 place.',
       max: '100 000 places maximum.',
+    },
+    price: {
+      required: 'Le prix est obligatoire.',
+      min: 'Le prix doit être supérieur à 0.',
+      max: '2 000 TND maximum par place.',
     },
   };
 
@@ -79,7 +86,9 @@ export class EventForm {
       location: raw.location!,
       category: raw.category as EventCategory,
       date: new Date(raw.date!).toISOString(),
-      totalSeats: raw.totalSeats!
+      totalSeats: raw.totalSeats!,
+      // Math.round : 19.99 * 100 = 1998.9999… en virgule flottante, d'où l'arrondi
+      priceCents: Math.round(raw.price! * 100),
     }).subscribe({
       next: () => this.router.navigate(['/evenements']),
       error: (err: HttpErrorResponse) => {

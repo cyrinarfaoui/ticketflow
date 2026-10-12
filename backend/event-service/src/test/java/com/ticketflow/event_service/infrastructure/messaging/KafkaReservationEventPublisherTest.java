@@ -46,14 +46,17 @@ class KafkaReservationEventPublisherTest {
                 .thenReturn(CompletableFuture.completedFuture(result));
 
         // Act
-        publisher.publishCreated(reservation);
+        publisher.publishCreated(reservation, 10_000L, "pm_card_visa");
 
         // Assert : on récupère le message envoyé pour l'inspecter
         ArgumentCaptor<ReservationCreatedEvent> captor = ArgumentCaptor.forClass(ReservationCreatedEvent.class);
         verify(kafkaTemplate).send(eq(TOPIC), eq(reservation.getId().toString()), captor.capture());
 
         ReservationCreatedEvent event = captor.getValue();
-        assertThat(event.version()).isEqualTo(1);
+        assertThat(event.version()).isEqualTo(2);
+        assertThat(event.amountCents()).isEqualTo(10_000L);
+        assertThat(event.currency()).isEqualTo("TND");
+        assertThat(event.paymentMethod()).isEqualTo("pm_card_visa");
         assertThat(event.reservationId()).isEqualTo(reservation.getId().toString());
         assertThat(event.eventId()).isEqualTo(reservation.getEventId().toString());
         assertThat(event.seats()).isEqualTo(2);
@@ -68,7 +71,7 @@ class KafkaReservationEventPublisherTest {
                 .thenReturn(CompletableFuture.failedFuture(new RuntimeException("Kafka indisponible")));
 
         // Act : ne doit lever aucune exception (l'erreur est seulement journalisée)
-        publisher.publishCreated(reservation);
+        publisher.publishCreated(reservation, 10_000L, "pm_card_visa");
 
         // Assert
         verify(kafkaTemplate).send(eq(TOPIC), eq(reservation.getId().toString()), any(ReservationCreatedEvent.class));

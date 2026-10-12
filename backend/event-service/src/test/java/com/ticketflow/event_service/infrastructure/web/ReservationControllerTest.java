@@ -47,9 +47,9 @@ class ReservationControllerTest {
     void cree_la_reservation_au_nom_de_l_utilisateur_du_jeton() {
         UUID eventId = UUID.randomUUID();
         Reservation reservation = new Reservation(UUID.randomUUID(), eventId, "user-1", 2);
-        when(reservationService.createReservation(eventId, "user-1", 2)).thenReturn(reservation);
+        when(reservationService.createReservation(eventId, "user-1", 2, "pm_card_visa")).thenReturn(reservation);
 
-        var response = controller.createReservation(eventId, new CreateReservationRequest(2), JWT);
+        var response = controller.createReservation(eventId, new CreateReservationRequest(2, "pm_card_visa"), JWT);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody().id()).isEqualTo(reservation.getId());
