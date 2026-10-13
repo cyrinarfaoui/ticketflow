@@ -105,8 +105,10 @@ services:
     container_name: ticketflow-notification-service
     depends_on:
       - kafka
+      - event-service
     environment:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      EVENT_SERVICE_URL: http://event-service:8080   # WebClient : détails de l'événement (ticket #5)
     ports:
       - "8083:8083"
 
@@ -130,11 +132,13 @@ services:
     depends_on:
       - event-service
       - auth-service
+      - notification-service
       - keycloak
     environment:
       # Dans Docker, les services s'appellent par leur NOM (la "découverte" de Docker Compose)
       EVENT_SERVICE_URL: http://event-service:8080
       AUTH_SERVICE_URL: http://auth-service:8082
+      NOTIFICATION_SERVICE_URL: http://notification-service:8083
       # Le jeton contient l'émetteur "localhost:8081" (vu par le navigateur)…
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8081/realms/ticketflow
       # … mais DANS Docker, les clés publiques de Keycloak se récupèrent via son nom de conteneur

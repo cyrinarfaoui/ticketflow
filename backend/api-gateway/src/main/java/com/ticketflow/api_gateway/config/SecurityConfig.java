@@ -31,6 +31,8 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()          // pré-requêtes CORS du navigateur
                         .pathMatchers("/actuator/health/**").permitAll()              // sondes Docker / Kubernetes
                         .pathMatchers(HttpMethod.GET, "/api/events/**").permitAll()   // catalogue public
+                        // Flux public : aucune donnée personnelle, et EventSource ne sait pas envoyer de jeton
+                        .pathMatchers(HttpMethod.GET, "/api/notifications/stream").permitAll()
                         .anyExchange().authenticated()                                // tout le reste : jeton obligatoire
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
