@@ -23,7 +23,9 @@ public class KafkaReservationCreatedListener {
     @KafkaListener(topics = "reservation.created")
     public void onMessage(ReservationCreatedMessage message) {
         log.info("Message reçu : {}", message);
-        useCase.handle(toDomain(message));
+        // block() est permis ICI : le listener tourne sur un thread Kafka classique, pas sur un thread Netty.
+        // On attend la fin (2 s max grâce au timeout) avant que Kafka passe au message suivant.
+        useCase.handle(toDomain(message)).block();
     }
 
     private ReservationCreated toDomain(ReservationCreatedMessage message) {

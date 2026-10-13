@@ -24,6 +24,14 @@ spring:
               filters:
                 - StripPrefix=1          # /api/events/42 → /events/42
 
+            # /api/notifications/** → notification-service (flux SSE en direct, ticket #5)
+            - id: notification-service
+              uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/api/notifications/**
+              filters:
+                - StripPrefix=1
+
             # /api/auth/** → auth-service
             - id: auth-service
               uri: ${AUTH_SERVICE_URL:http://localhost:8082}

@@ -8,12 +8,15 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class KafkaReservationCreatedListenerTest {
@@ -26,6 +29,8 @@ class KafkaReservationCreatedListenerTest {
 
     @Test
     void transforme_le_message_kafka_en_evenement_metier_et_le_transmet() {
+        // Le faux use case renvoie un Mono vide (sinon null.block() → NullPointerException)
+        when(useCase.handle(any())).thenReturn(Mono.empty());
         UUID reservationId = UUID.randomUUID();
         UUID eventId = UUID.randomUUID();
         ReservationCreatedMessage message = new ReservationCreatedMessage(
