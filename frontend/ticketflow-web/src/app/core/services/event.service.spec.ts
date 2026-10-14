@@ -75,6 +75,16 @@ describe('EventService', () => {
     });
   });
 
+  it("met à jour en direct les places d'un seul événement, sans requête HTTP", () => {
+    const festival: EventResponse = { ...CONCERT, id: 'e2', title: 'Festival', availableSeats: 200 };
+    service.search({}).subscribe();
+    httpMock.expectOne((req) => req.url === EVENTS_URL).flush([CONCERT, festival]);
+
+    service.updateAvailableSeats('e1', 12);
+
+    expect(service.events$().map((e) => e.availableSeats)).toEqual([12, 200]);
+  });
+
   it('crée un événement avec POST /events', () => {
     const payload = {
       title: 'Concert de jazz', description: '', location: 'Tunis', category: 'CONCERT' as const,

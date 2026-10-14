@@ -64,6 +64,13 @@ export class EventService {
     );
   }
 
+  // Mise à jour en direct (notification SSE) : seule la carte de cet événement change, sans requête HTTP
+  updateAvailableSeats(eventId: string, availableSeats: number): void {
+    this.events.update((events) =>
+      events.map((event) => (event.id === eventId ? { ...event, availableSeats } : event)),
+    );
+  }
+
   createEvent(payload: CreateEventPayload): Observable<EventResponse> {
     return this.http.post<EventResponse>(`${API_BASE_URL}/events`, payload);
   }

@@ -36,6 +36,7 @@
   </nav>
 
   <div class="app-auth">
+    <app-live-notifications />
     @if (authService.isLoggedIn()) {
       <span class="user-info">Connecté : {{ authService.username() }}</span>
       <button type="button" (click)="authService.logout()">Se déconnecter</button>
