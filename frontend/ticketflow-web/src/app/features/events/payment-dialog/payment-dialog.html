@@ -1,0 +1,102 @@
+@let e = event();
+
+<dialog #dialog class="payment" aria-labelledby="payment-title" (cancel)="onCancel($event)" (close)="onClose()">
+  <header class="payment__header">
+    <h2 id="payment-title">Paiement</h2>
+    <span class="test-badge">Mode test</span>
+  </header>
+
+  <section class="recap" aria-label="Récapitulatif de la commande">
+    <p class="recap__title">{{ e.title }}</p>
+    <p class="recap__meta">{{ e.date | date: 'EEEE d MMMM y, HH:mm' }} · {{ e.location }}</p>
+    <p class="recap__line">{{ seats() }} place(s) × {{ unitPrice() }}</p>
+    <p class="recap__total">Total <strong>{{ total() }}</strong></p>
+  </section>
+
+  @switch (step()) {
+    @case ('form') {
+      <form [formGroup]="form" (ngSubmit)="pay()" novalidate>
+        <div class="field">
+          @let cardError = error('cardNumber');
+          <label for="card-number">Numéro de carte</label>
+          <input id="card-number" type="text" inputmode="numeric" autocomplete="cc-number"
+                 placeholder="1234 1234 1234 1234" maxlength="19" formControlName="cardNumber"
+                 (input)="onCardNumberInput()"
+                 [attr.aria-invalid]="cardError ? true : null"
+                 [attr.aria-describedby]="cardError ? 'card-number-error' : null" />
+          @if (cardError) {
+            <p id="card-number-error" class="error" role="alert">{{ cardError }}</p>
+          }
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            @let expiryError = error('expiry');
+            <label for="card-expiry">Expiration</label>
+            <input id="card-expiry" type="text" inputmode="numeric" autocomplete="cc-exp"
+                   placeholder="MM/AA" maxlength="5" formControlName="expiry"
+                   (input)="onExpiryInput()"
+                   [attr.aria-invalid]="expiryError ? true : null"
+                   [attr.aria-describedby]="expiryError ? 'card-expiry-error' : null" />
+            @if (expiryError) {
+              <p id="card-expiry-error" class="error" role="alert">{{ expiryError }}</p>
+            }
+          </div>
+
+          <div class="field">
+            @let cvcError = error('cvc');
+            <label for="card-cvc">CVC</label>
+            <input id="card-cvc" type="text" inputmode="numeric" autocomplete="cc-csc"
+                   placeholder="123" maxlength="3" formControlName="cvc"
+                   [attr.aria-invalid]="cvcError ? true : null"
+                   [attr.aria-describedby]="cvcError ? 'card-cvc-error' : null" />
+            @if (cvcError) {
+              <p id="card-cvc-error" class="error" role="alert">{{ cvcError }}</p>
+            }
+          </div>
+        </div>
+
+        <button type="submit" class="pay-button">Payer {{ total() }}</button>
+        <button type="button" class="link-button" (click)="close()">Annuler</button>
+
+        <p class="secure">🔒 Paiement sécurisé : votre numéro de carte ne transite pas par nos serveurs.</p>
+
+        <details class="test-cards">
+          <summary>Cartes de test (date future quelconque, CVC quelconque)</summary>
+          <ul>
+            @for (card of testCards; track card.number) {
+              <li><code>{{ formatCardNumber(card.number) }}</code> — {{ card.label }}</li>
+            }
+          </ul>
+        </details>
+      </form>
+    }
+
+    @case ('processing') {
+      <p class="state state--processing" role="status">Vérification du paiement auprès de la banque…</p>
+    }
+
+    @case ('succeeded') {
+      <div class="state state--success" role="status">
+        <p><span aria-hidden="true">✅</span> Paiement accepté : votre réservation est confirmée.</p>
+        <a routerLink="/mes-reservations" (click)="close()">Voir mes réservations</a>
+        <button type="button" class="link-button" (click)="close()">Fermer</button>
+      </div>
+    }
+
+    @case ('failed') {
+      <div class="state state--failed" role="alert">
+        <p><span aria-hidden="true">❌</span> {{ resultMessage() }}</p>
+        <button type="button" class="pay-button" (click)="retry()">Réessayer avec une autre carte</button>
+        <button type="button" class="link-button" (click)="close()">Fermer</button>
+      </div>
+    }
+
+    @case ('pending') {
+      <div class="state" role="status">
+        <p>Le paiement prend plus de temps que prévu. Le résultat apparaîtra dans « Mes réservations ».</p>
+        <button type="button" class="link-button" (click)="close()">Fermer</button>
+      </div>
+    }
+  }
+</dialog>

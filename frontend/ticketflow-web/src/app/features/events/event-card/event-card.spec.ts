@@ -4,7 +4,6 @@ import { registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
 import { EventCard } from './event-card';
 import { EventResponse } from '../../../core/services/event.service';
-import { ReserveRequest } from '../../../core/models/payment';
 
 // FABRIQUE : crée un événement de test valide, dont on peut changer certains champs
 function createEvent(overrides: Partial<EventResponse> = {}): EventResponse {
@@ -118,11 +117,11 @@ describe('EventCard', () => {
 
   describe('interaction', () => {
 
-    it('émet le nombre de places et la carte choisis au clic sur Réserver', () => {
+    it('émet le nombre de places choisi au clic sur Réserver (le paiement se fait ensuite)', () => {
       // Arrange
       render(createEvent());
-      let emitted: ReserveRequest | undefined;
-      component.reserve.subscribe((request) => (emitted = request));
+      let emitted: number | undefined;
+      component.reserve.subscribe((seats) => (emitted = seats));
 
       // Act : l'utilisateur tape 3 puis clique
       const input = element.querySelector<HTMLInputElement>('input[type="number"]')!;
@@ -130,21 +129,14 @@ describe('EventCard', () => {
       input.dispatchEvent(new Event('input'));
       element.querySelector<HTMLButtonElement>('button')!.click();
 
-      // Assert : Visa par défaut
-      expect(emitted).toEqual({ seats: 3, paymentMethod: 'pm_card_visa' });
+      // Assert
+      expect(emitted).toBe(3);
     });
 
-    it('envoie le JETON de la carte de test choisie, jamais un numéro de carte', () => {
+    it('ne propose plus de choisir le résultat du paiement sur la carte', () => {
       render(createEvent());
-      let emitted: ReserveRequest | undefined;
-      component.reserve.subscribe((request) => (emitted = request));
 
-      const select = element.querySelector<HTMLSelectElement>('select')!;
-      select.value = 'pm_card_insufficientFunds';
-      select.dispatchEvent(new Event('change'));
-      element.querySelector<HTMLButtonElement>('.reserve-row button')!.click();
-
-      expect(emitted?.paymentMethod).toBe('pm_card_insufficientFunds');
+      expect(element.querySelector('select')).toBeNull();
     });
 
     it("affiche le prix d'une place et le total à payer", () => {

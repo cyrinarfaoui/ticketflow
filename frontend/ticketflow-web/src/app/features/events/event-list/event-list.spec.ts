@@ -24,6 +24,7 @@ const EVENTS_URL = `${API_BASE_URL}/events`;
 describe('EventList (intégration)', () => {
   let fixture: ComponentFixture<EventList>;
   let element: HTMLElement;
+  let component: EventList;
   let httpMock: HttpTestingController;
   let authService: jasmine.SpyObj<AuthService>;
 
@@ -33,8 +34,9 @@ describe('EventList (intégration)', () => {
     jasmine.clock().mockDate();
 
     // Faux AuthService : par défaut, l'utilisateur n'est PAS admin
-    authService = jasmine.createSpyObj<AuthService>('AuthService', ['hasRole']);
+    authService = jasmine.createSpyObj<AuthService>('AuthService', ['hasRole', 'isLoggedIn', 'login']);
     authService.hasRole.and.returnValue(false);
+    authService.isLoggedIn.and.returnValue(true);
 
     await TestBed.configureTestingModule({
       imports: [EventList],
@@ -57,6 +59,7 @@ describe('EventList (intégration)', () => {
   // Affiche la page, laisse passer le debounce, et renvoie la requête de recherche
   function openPage(): TestRequest {
     fixture = TestBed.createComponent(EventList);
+    component = fixture.componentInstance;
     element = fixture.nativeElement;
     fixture.detectChanges();
     jasmine.clock().tick(300);
@@ -211,49 +214,52 @@ describe('EventList (intégration)', () => {
 
   describe('réservation', () => {
 
-    it('envoie POST /reservations puis relance la recherche avec les filtres actuels', () => {
+    it("ouvre la fenêtre de paiement avec l'événement et le nombre de places, sans encore rien envoyer", () => {
+      loadPage();
+
+      element.querySelector<HTMLButtonElement>('app-event-card button')!.click();
+      fixture.detectChanges();
+
+      expect(element.querySelector('app-payment-dialog')).not.toBeNull();
+      expect(component.checkout()).toEqual({ event: EVENTS[0], seats: 1 });
+      httpMock.expectNone(`${API_BASE_URL}/reservations?eventId=1`);   // rien n'est payé avant la saisie de la carte
+    });
+
+    it("demande de se connecter avant de payer quand l'utilisateur n'est pas connecté", () => {
+      authService.isLoggedIn.and.returnValue(false);
+      loadPage();
+
+      element.querySelector<HTMLButtonElement>('app-event-card button')!.click();
+      fixture.detectChanges();
+
+      expect(authService.login).toHaveBeenCalled();
+      expect(element.querySelector('app-payment-dialog')).toBeNull();
+    });
+
+    it('après un paiement, relance la recherche avec les filtres actuels et recharge "Mes réservations"', () => {
       loadPage();
       type('#filter-location', 'Tunis');
       searchRequest().flush([EVENTS[0]]);
+      component.reserve(EVENTS[0], 1);
+
+      component.onCheckoutClosed(true);
       fixture.detectChanges();
 
-      element.querySelector<HTMLButtonElement>('app-event-card button')!.click();
-
-      const reservation = httpMock.expectOne(`${API_BASE_URL}/reservations?eventId=1`);
-      expect(reservation.request.method).toBe('POST');
-      expect(reservation.request.body).toEqual({ seats: 1, paymentMethod: 'pm_card_visa' });
-      reservation.flush({ id: 'r1', eventId: '1', seats: 1, status: 'PENDING' });
-
+      expect(component.checkout()).toBeNull();
       const refresh = searchRequest();
       expect(refresh.request.params.get('location')).toBe('Tunis');
       refresh.flush([EVENTS[0]]);
-
-      // Le store partagé se recharge : le badge "Mes réservations" du header sera à jour
       httpMock.expectOne(`${API_BASE_URL}/reservations/me`).flush([]);
     });
 
-    it('laisse le 401 à la bannière globale : aucun message dans la liste', () => {
+    it('fenêtre fermée sans payer : ne recharge rien', () => {
       loadPage();
+      component.reserve(EVENTS[0], 1);
 
-      element.querySelector<HTMLButtonElement>('app-event-card button')!.click();
-      httpMock
-        .expectOne(`${API_BASE_URL}/reservations?eventId=1`)
-        .flush(null, { status: 401, statusText: 'Unauthorized' });
-      fixture.detectChanges();
+      component.onCheckoutClosed(false);
 
-      expect(element.querySelector('[role="alert"]')).toBeNull();
-    });
-
-    it('affiche le message métier renvoyé par l\'API (409)', () => {
-      loadPage();
-
-      element.querySelector<HTMLButtonElement>('app-event-card button')!.click();
-      httpMock
-        .expectOne(`${API_BASE_URL}/reservations?eventId=1`)
-        .flush({ error: 'Pas assez de places disponibles' }, { status: 409, statusText: 'Conflict' });
-      fixture.detectChanges();
-
-      expect(element.querySelector('[role="alert"]')?.textContent).toContain('Pas assez de places disponibles');
+      expect(component.checkout()).toBeNull();
+      httpMock.expectNone(`${API_BASE_URL}/reservations/me`);
     });
   });
 });
