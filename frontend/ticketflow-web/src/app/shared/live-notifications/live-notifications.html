@@ -1,0 +1,39 @@
+<div class="live">
+  <button
+    type="button"
+    class="bell"
+    aria-controls="live-panel"
+    [attr.aria-expanded]="expanded()"
+    (click)="toggle()"
+  >
+    <span aria-hidden="true">🔔</span>
+    <span class="visually-hidden">Activité en direct</span>
+    @if (store.unreadCount() > 0) {
+      <span class="bell-badge">
+        {{ store.unreadCount() }}<span class="visually-hidden"> nouvelle(s)</span>
+      </span>
+    }
+  </button>
+
+  @if (store.status() === 'reconnecting') {
+    <span class="live-status">Reconnexion…</span>
+  }
+
+  @if (expanded()) {
+    <section id="live-panel" class="live-panel" aria-labelledby="live-panel-title">
+      <h2 id="live-panel-title">Activité en direct</h2>
+      @if (store.notifications().length > 0) {
+        <ul>
+          @for (notification of store.notifications(); track $index) {
+            <li>{{ notification.message }}</li>
+          }
+        </ul>
+      } @else {
+        <p class="live-empty">Aucune activité pour le moment.</p>
+      }
+    </section>
+  }
+
+  <!-- Annonce polie aux lecteurs d'écran : lue sans interrompre l'utilisateur -->
+  <p class="visually-hidden" aria-live="polite">{{ latest() }}</p>
+</div>

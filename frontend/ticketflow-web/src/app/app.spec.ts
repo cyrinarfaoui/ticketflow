@@ -4,6 +4,7 @@ import { provideRouter, Router } from '@angular/router';
 import { App } from './app';
 import { AuthService } from './core/services/auth.service';
 import { ReservationStore } from './core/stores/reservation.store';
+import { LiveNotificationStore } from './core/stores/live-notification.store';
 
 // Une page vide : pour tester le header, on n'a pas besoin des vraies pages
 @Component({ template: '' })
@@ -13,11 +14,22 @@ describe('App', () => {
   let authService: jasmine.SpyObj<AuthService>;
   // Faux store : le header ne fait que LIRE activeCount ; on contrôle sa valeur avec activeCount.set(...)
   let reservationStore: { activeCount: WritableSignal<number>; load: jasmine.Spy; clear: jasmine.Spy };
+  // Faux store du flux en direct : pas de vraie connexion SSE pendant les tests
+  let liveStore: { connect: jasmine.Spy; disconnect: jasmine.Spy; markAllRead: jasmine.Spy;
+    notifications: WritableSignal<never[]>; unreadCount: WritableSignal<number>; status: WritableSignal<string> };
 
   beforeEach(async () => {
     authService = jasmine.createSpyObj<AuthService>('AuthService', [
       'isLoggedIn', 'username', 'login', 'logout', 'register', 'hasRole',
     ]);
+    liveStore = {
+      connect: jasmine.createSpy('connect'),
+      disconnect: jasmine.createSpy('disconnect'),
+      markAllRead: jasmine.createSpy('markAllRead'),
+      notifications: signal([]),
+      unreadCount: signal(0),
+      status: signal('open'),
+    };
     reservationStore = {
       activeCount: signal(0),
       load: jasmine.createSpy('load'),
@@ -33,6 +45,7 @@ describe('App', () => {
         ]),
         { provide: AuthService, useValue: authService },
         { provide: ReservationStore, useValue: reservationStore },
+        { provide: LiveNotificationStore, useValue: liveStore },
       ],
     }).compileComponents();
   });
@@ -176,6 +189,26 @@ describe('App', () => {
 
       expect(reservationStore.clear).toHaveBeenCalled();
       expect(reservationStore.load).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('activité en direct', () => {
+
+    it("ouvre le flux SSE au démarrage, même sans être connecté (flux public)", async () => {
+      authService.isLoggedIn.and.returnValue(false);
+      const element = await renderAt('/');
+
+      expect(liveStore.connect).toHaveBeenCalledTimes(1);
+      expect(element.querySelector('app-live-notifications .bell')).not.toBeNull();
+    });
+
+    it("ferme le flux quand l'application est détruite", async () => {
+      authService.isLoggedIn.and.returnValue(false);
+      const fixture = TestBed.createComponent(App);
+
+      fixture.destroy();
+
+      expect(liveStore.disconnect).toHaveBeenCalled();
     });
   });
 });
