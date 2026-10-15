@@ -54,6 +54,7 @@ build:frontend:
 test:frontend:
   extends: .frontend
   stage: test
+  dependencies: []   # n'a pas besoin du dist/ de build:frontend : évite un téléchargement inutile
   variables:
     CHROME_BIN: /usr/bin/chromium
   script:
@@ -100,6 +101,7 @@ build:backend:
 .backend-test:
   extends: .backend
   stage: test
+  dependencies: []   # recompile lui-même : pas besoin des .jar de build:backend
   script:
     - mvn $MAVEN_CLI_OPTS verify
   artifacts:
@@ -183,12 +185,16 @@ sonarcloud:
 
 # =====================================================================
 #  PACKAGE : images Docker -> GitLab Container Registry
-#   - sur une Merge Request : on CONSTRUIT seulement (vérifie les Dockerfile)
-#   - sur main              : on construit ET on PUBLIE (tag = SHA du commit + latest)
+#   Uniquement sur main : on construit ET on PUBLIE (tag = SHA du commit + latest).
+#   Sur une Merge Request, build + tests + Sonar suffisent à valider le code :
+#   construire 6 images à chaque MR coûte trop cher (runner auto-hébergé, connexion limitée).
 # =====================================================================
 
 package:
   stage: package
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  dependencies: []   # l'image est construite depuis le Dockerfile : aucun artefact à télécharger
   image: docker:28
   services:
     - docker:28-dind
@@ -205,11 +211,6 @@ package:
   script:
     - IMAGE="$CI_REGISTRY_IMAGE/$APP"
     - docker build -t "$IMAGE:$CI_COMMIT_SHORT_SHA" "$CONTEXT/$APP"
-    - |
-      if [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ]; then
-        docker tag "$IMAGE:$CI_COMMIT_SHORT_SHA" "$IMAGE:latest"
-        docker push "$IMAGE:$CI_COMMIT_SHORT_SHA"
-        docker push "$IMAGE:latest"
-      else
-        echo "Merge Request : image construite, non publiée."
-      fi
+    - docker tag "$IMAGE:$CI_COMMIT_SHORT_SHA" "$IMAGE:latest"
+    - docker push "$IMAGE:$CI_COMMIT_SHORT_SHA"
+    - docker push "$IMAGE:latest"
