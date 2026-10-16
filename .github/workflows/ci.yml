@@ -122,8 +122,11 @@ jobs:
 
   # ===================================================================
   #  QUALITÉ : analyse SonarCloud + Quality Gate bloquante
+  #  Plan gratuit SonarCloud : seule la branche principale (main) peut être analysée.
+  #  Sur les branches de ticket, la CI vérifie compilation, tests et couverture.
   # ===================================================================
   sonarcloud:
+    if: github.ref == 'refs/heads/main'
     needs: [backend, frontend]      # attend la fin des tests (il lui faut leurs rapports)
     runs-on: ubuntu-latest
     steps:
