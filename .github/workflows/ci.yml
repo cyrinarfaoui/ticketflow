@@ -1,0 +1,198 @@
+# =====================================================================
+#  CI/CD TicketFlow — GitHub Actions
+#  backend (5 services en parallèle) + frontend → SonarCloud → images Docker (main uniquement)
+#
+#  Secret à définir dans GitHub (Settings > Secrets and variables > Actions) :
+#    SONAR_TOKEN : token SonarCloud
+# =====================================================================
+
+name: CI
+
+# QUAND lancer le workflow : à chaque push, sur n'importe quelle branche
+# (le code arrive par le miroir GitLab → GitHub : il n'y a pas de Pull Request côté GitHub)
+on:
+  push:
+    branches: ['**']
+
+# Un nouveau push sur la même branche ANNULE le run précédent encore en cours (inutile de finir un vieux run)
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Moindre privilège : par défaut, le jeton GitHub du workflow ne peut que LIRE le code
+permissions:
+  contents: read
+
+jobs:
+
+  # ===================================================================
+  #  BACKEND : compile + tests + couverture JaCoCo (mvn verify), un job par service
+  # ===================================================================
+  backend:
+    name: backend (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false            # un service en échec n'arrête pas les autres : on voit TOUS les problèmes
+      matrix:
+        service: [api-gateway, auth-service, event-service, notification-service, payment-service]
+        include:                  # base de données utilisée par les tests d'intégration (Liquibase au démarrage)
+          - service: event-service
+            db: eventdb
+          - service: payment-service
+            db: paymentdb
+
+    # Conteneur PostgreSQL démarré à côté du job (les services sans base l'ignorent simplement)
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ${{ matrix.db || 'unused' }}
+          POSTGRES_USER: ticketflow
+          POSTGRES_PASSWORD: ticketflow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ticketflow"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/${{ matrix.db || 'unused' }}
+      SPRING_DATASOURCE_USERNAME: ticketflow
+      SPRING_DATASOURCE_PASSWORD: ticketflow   # base jetable du job, pas un secret de production
+
+    defaults:
+      run:
+        working-directory: backend/${{ matrix.service }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Java 25 + cache du dépôt Maven (~/.m2) : les dépendances ne sont téléchargées qu'une fois
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+          cache-dependency-path: backend/${{ matrix.service }}/pom.xml
+
+      - run: mvn -B --no-transfer-progress verify
+
+      # Résultats gardés pour SonarCloud (classes compilées + rapport de couverture)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-${{ matrix.service }}
+          path: |
+            backend/${{ matrix.service }}/target/classes
+            backend/${{ matrix.service }}/target/site/jacoco/jacoco.xml
+          retention-days: 1
+
+  # ===================================================================
+  #  FRONTEND : build de production + tests Karma avec couverture
+  # ===================================================================
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/ticketflow-web
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node 24 + cache npm (clé = package-lock.json)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/ticketflow-web/package-lock.json
+
+      - run: npm ci --no-audit --no-fund
+      - run: npx ng build
+      # Chrome est déjà installé sur les machines ubuntu-latest de GitHub
+      - run: npx ng test --watch=false --browsers=ChromeHeadlessCI --coverage
+      # Chemins du rapport lcov rendus relatifs à la racine du dépôt (attendu par Sonar)
+      - run: sed -i -E '/^SF:(\/|frontend\/)/! s#^SF:#SF:frontend/ticketflow-web/#' coverage/ticketflow-web/lcov.info
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/ticketflow-web/coverage/
+          retention-days: 1
+
+  # ===================================================================
+  #  QUALITÉ : analyse SonarCloud + Quality Gate bloquante
+  # ===================================================================
+  sonarcloud:
+    needs: [backend, frontend]      # attend la fin des tests (il lui faut leurs rapports)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0            # historique complet : Sonar calcule le "nouveau code"
+
+      # Récupère les rapports des jobs précédents et les remet là où sonar-project.properties les attend
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - run: |
+          for service in api-gateway auth-service event-service notification-service payment-service; do
+            mkdir -p backend/$service/target
+            cp -r artifacts/backend-$service/. backend/$service/target/
+          done
+          mkdir -p frontend/ticketflow-web/coverage
+          cp -r artifacts/frontend-coverage/. frontend/ticketflow-web/coverage/
+
+      - uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+        with:
+          args: -Dsonar.qualitygate.wait=true
+
+  # ===================================================================
+  #  PACKAGE : images Docker publiées sur GitHub Container Registry (ghcr.io)
+  #  Uniquement sur main : build once, deploy many.
+  # ===================================================================
+  package:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: sonarcloud
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write               # SEUL ce job a le droit de publier des images
+    strategy:
+      matrix:
+        include:
+          - { app: api-gateway, context: backend }
+          - { app: auth-service, context: backend }
+          - { app: event-service, context: backend }
+          - { app: notification-service, context: backend }
+          - { app: payment-service, context: backend }
+          - { app: ticketflow-web, context: frontend }
+    steps:
+      - uses: actions/checkout@v4
+
+      # Les noms d'images ghcr.io doivent être en minuscules
+      - id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/ticketflow-${{ matrix.app }}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Connexion au registre avec le jeton fourni automatiquement par GitHub (aucun secret à créer)
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}/${{ matrix.app }}
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:${{ github.sha }}
+            ${{ steps.image.outputs.name }}:latest
+          # Cache des couches Docker entre deux runs : les dépendances Maven/npm ne sont pas retéléchargées
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
