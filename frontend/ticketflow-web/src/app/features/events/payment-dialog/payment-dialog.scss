@@ -1,0 +1,192 @@
+.payment {
+  width: min(28rem, calc(100vw - 2rem));
+  padding: 1.5rem;
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.3);
+  color: #111827;
+
+  // Fond assombri derrière la fenêtre modale
+  &::backdrop {
+    background-color: rgba(15, 23, 42, 0.55);
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.payment__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+}
+
+// Comme le bandeau "TEST MODE" de Stripe : on ne confond jamais test et réel
+.test-badge {
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  background-color: #fef3c7;
+  color: #92400e;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.recap {
+  display: grid;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+  padding: 0.875rem 1rem;
+  border-radius: 10px;
+  background-color: #f9fafb;
+}
+
+.recap__title {
+  font-weight: 700;
+}
+
+.recap__meta,
+.recap__line {
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.recap__total {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.35rem !important;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+
+  strong {
+    font-size: 1.125rem;
+  }
+}
+
+form {
+  display: grid;
+  gap: 0.875rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.3rem;
+
+  label {
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  input {
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--color-border, #d1d5db);
+    border-radius: 8px;
+    font: inherit;
+    letter-spacing: 0.03em;
+
+    &[aria-invalid='true'] {
+      border-color: #b91c1c;
+    }
+
+    &:focus-visible {
+      outline: 3px solid #93c5fd;
+      outline-offset: 1px;
+    }
+  }
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.error {
+  font-size: 0.8125rem;
+  color: #b91c1c;
+}
+
+.pay-button {
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--color-primary, #2563eb);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--color-primary-dark, #1d4ed8);
+  }
+}
+
+.link-button {
+  justify-self: center;
+  padding: 0.25rem 0.5rem;
+  border: none;
+  background: none;
+  color: #4b5563;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.pay-button:focus-visible,
+.link-button:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+.secure {
+  font-size: 0.8125rem;
+  text-align: center;
+  color: #4b5563;
+}
+
+.test-cards {
+  font-size: 0.8125rem;
+  color: #4b5563;
+
+  summary {
+    cursor: pointer;
+  }
+
+  ul {
+    margin: 0.5rem 0 0;
+    padding-left: 1.1rem;
+  }
+
+  code {
+    font-size: 0.8125rem;
+  }
+}
+
+.state {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem 0 0;
+  text-align: center;
+}
+
+.state--processing {
+  padding: 1.5rem 0;
+}
+
+.state--success p {
+  font-weight: 600;
+  color: #166534;
+}
+
+.state--failed p {
+  font-weight: 600;
+  color: #b91c1c;
+}

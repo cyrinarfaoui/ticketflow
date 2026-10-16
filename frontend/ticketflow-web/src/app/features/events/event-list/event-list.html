@@ -43,8 +43,9 @@
     <a routerLink="/events/new" class="create-link">Créer un nouvel événement</a>
   }
 
-  @if (errorMessage()) {
-    <p class="error" role="alert">{{ errorMessage() }}</p>
+  <!-- Fenêtre de paiement : les erreurs (ex. "Pas assez de places") y sont affichées -->
+  @if (checkout(); as order) {
+    <app-payment-dialog [event]="order.event" [seats]="order.seats" (closed)="onCheckoutClosed($event)" />
   }
 
   <p class="results-count" role="status">
@@ -59,7 +60,7 @@
     <ul class="event-list" role="list">
       @for (event of eventService.events$(); track event.id) {
         <li>
-          <app-event-card [event]="event" (reserve)="reserve(event.id, $event)" />
+          <app-event-card [event]="event" (reserve)="reserve(event, $event)" />
         </li>
       }
     </ul>

@@ -2,7 +2,7 @@ import { Component, computed, input, output, signal } from '@angular/core';
 import { EventResponse } from '../../../core/services/event.service';
 import { categoryLabel } from '../../../core/models/event-category';
 import { DatePipe } from '@angular/common';
-import { formatPrice, ReserveRequest, TEST_CARDS } from '../../../core/models/payment';
+import { formatPrice } from '../../../core/models/payment';
 
 
 // Les états possibles d'un événement
@@ -22,12 +22,8 @@ readonly bookable = input(true);
    // ENTRÉE : le parent nous donne l'événement à afficher
 readonly event = input.required<EventResponse>();
 
-// SORTIE : on prévient le parent "je veux réserver N places avec ce moyen de paiement"
-readonly reserve = output<ReserveRequest>();
-
-  // Cartes de test proposées (simulation du formulaire de paiement Stripe)
-  readonly testCards = TEST_CARDS;
-  readonly paymentMethod = signal(TEST_CARDS[0].token);
+// SORTIE : on prévient le parent "je veux réserver N places" (le paiement se fait ensuite, dans la fenêtre de paiement)
+readonly reserve = output<number>();
 
   // ÉTAT LOCAL : le nombre de places choisi dans CETTE carte (1 par défaut)
   readonly seats = signal(1);
@@ -63,12 +59,8 @@ readonly reserve = output<ReserveRequest>();
     this.seats.set(Number(value));
   }
 
-  onPaymentMethodChange(value: string): void {
-    this.paymentMethod.set(value);
-  }
-
   onReserve(): void {
-    this.reserve.emit({ seats: this.seats(), paymentMethod: this.paymentMethod() });
+    this.reserve.emit(this.seats());
   }
 
 

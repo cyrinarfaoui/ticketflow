@@ -53,17 +53,6 @@
         [value]="seats()"
         (input)="onSeatsChange(seatsInput.value)"
       />
-      <label [for]="'card-' + e.id">Carte</label>
-      <select
-        #cardSelect
-        [id]="'card-' + e.id"
-        [value]="paymentMethod()"
-        (change)="onPaymentMethodChange(cardSelect.value)"
-      >
-        @for (card of testCards; track card.token) {
-          <option [value]="card.token">{{ card.label }}</option>
-        }
-      </select>
       <button type="button" (click)="onReserve()">
         Réserver<span class="visually-hidden"> pour {{ total() }}</span>
       </button>
