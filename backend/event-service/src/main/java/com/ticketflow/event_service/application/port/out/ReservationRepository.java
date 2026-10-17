@@ -14,6 +14,9 @@ import java.util.UUID;
 public interface ReservationRepository {
 
     Reservation save(Reservation reservation);
+    void saveAll(List<Reservation> reservations);
+    // Réservations encore valables (en attente ou confirmées) d'un événement
+    List<Reservation> findActiveByEventId(UUID eventId);
     Optional<Reservation> findById(UUID id);
     Page<Reservation> findAll(ReservationStatus status, Pageable pageable);
     // Les réservations d'un utilisateur, les plus récentes d'abord

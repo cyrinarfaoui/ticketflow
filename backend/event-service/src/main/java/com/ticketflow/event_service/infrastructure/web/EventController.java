@@ -2,13 +2,15 @@ package com.ticketflow.event_service.infrastructure.web;
 
 
 import com.ticketflow.event_service.application.EventService;
-import com.ticketflow.event_service.application.ReservationService;
 import com.ticketflow.event_service.domain.EventCategory;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.ticketflow.event_service.application.CancellationJob;
+import com.ticketflow.event_service.application.EventCancellationJobs;
+import java.net.URI;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -20,11 +22,11 @@ public class EventController {
 
 
     private final EventService eventService;
+    private final EventCancellationJobs cancellationJobs;
 
-
-    public EventController(EventService eventService) {
+    public EventController(EventService eventService, EventCancellationJobs cancellationJobs) {
         this.eventService = eventService;
-
+        this.cancellationJobs = cancellationJobs;
     }
 
     @PostMapping
@@ -63,5 +65,17 @@ public class EventController {
         return EventResponse.from(eventService.closeEvent(id));
     }
 
+    // Annulation : traitement long → 202 Accepted tout de suite ; l'avancement se suit sur GET .../cancellation
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<CancellationJob> cancelEvent(@PathVariable UUID id) {
+        return ResponseEntity.accepted()
+                .location(URI.create("/events/" + id + "/cancellation"))
+                .body(cancellationJobs.start(id));
+    }
+
+    @GetMapping("/{id}/cancellation")
+    public ResponseEntity<CancellationJob> cancellationStatus(@PathVariable UUID id) {
+        return ResponseEntity.of(cancellationJobs.find(id));   // Optional vide → 404 (aucune annulation lancée)
+    }
 
 }

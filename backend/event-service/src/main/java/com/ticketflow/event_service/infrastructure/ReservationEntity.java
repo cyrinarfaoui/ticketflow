@@ -5,6 +5,7 @@ import com.ticketflow.event_service.domain.ReservationStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -37,6 +38,10 @@ public class ReservationEntity {
 
     @Column(name = "payment_failure_code", length = 40)
     private String paymentFailureCode;
+
+    @Setter
+    @Column(name = "user_email", length = 254)   // 254 = longueur maximale d'une adresse e-mail (RFC 5321)
+    private String userEmail;
 
     // Raccourcis gardés pour les tests existants (réservation sans propriétaire)
     public ReservationEntity(UUID id, UUID eventId, int seats, ReservationStatus status) {

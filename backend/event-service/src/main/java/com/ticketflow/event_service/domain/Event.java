@@ -73,6 +73,9 @@ public class Event {
         if (seats <= 0) {
             throw new IllegalArgumentException("Le nombre de places à réserver doit être positif");
         }
+        if (status == EventStatus.CANCELLED) {
+            throw new IllegalStateException("Cet événement est annulé");
+        }
         if (status == EventStatus.CLOSED) {
             throw new IllegalStateException("Les réservations sont clôturées pour cet événement");
         }
@@ -95,10 +98,21 @@ public class Event {
      * on peut encore les annuler, mais plus aucune nouvelle réservation n'est acceptée.
      */
     public void close() {
-        if (status == EventStatus.CLOSED) {
-            throw new IllegalStateException("Les réservations de cet événement sont déjà clôturées");
+        if (status != EventStatus.OPEN) {
+            throw new IllegalStateException("Seul un événement ouvert peut être clôturé");
         }
         this.status = EventStatus.CLOSED;
+    }
+
+    /**
+     * Annule l'événement (il n'aura pas lieu). Définitif : plus aucune réservation ni réouverture.
+     * Possible même s'il était clôturé : un concert complet peut aussi être annulé.
+     */
+    public void cancel() {
+        if (status == EventStatus.CANCELLED) {
+            throw new IllegalStateException("Cet événement est déjà annulé");
+        }
+        this.status = EventStatus.CANCELLED;
     }
 
 }

@@ -33,6 +33,7 @@ export interface MyReservation {
   status: ReservationStatus;
   createdAt: string;
   paymentFailureCode: string | null;   // motif du refus de paiement (codes Stripe), sinon null
+  eventCancelled: boolean;             // l'organisateur a annulé l'événement (ticket #17)
 }
 
 // PageResponse.java : une page de résultats + de quoi afficher "page 2 sur 5"

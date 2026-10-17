@@ -2,6 +2,7 @@ package com.ticketflow.event_service.infrastructure.web;
 
 import com.ticketflow.event_service.application.ReservationWithEvent;
 import com.ticketflow.event_service.domain.Event;
+import com.ticketflow.event_service.domain.EventStatus;
 import com.ticketflow.event_service.domain.Reservation;
 import com.ticketflow.event_service.domain.ReservationStatus;
 
@@ -23,7 +24,9 @@ public record MyReservationResponse(
         ReservationStatus status,
         Instant createdAt,
         // Code Stripe du refus de paiement (insufficient_funds…) si la saga a annulé la réservation
-        String paymentFailureCode
+        String paymentFailureCode,
+        // true si l'événement lui-même a été annulé par l'organisateur (ticket #17)
+        boolean eventCancelled
 ) {
     public static MyReservationResponse from(ReservationWithEvent item) {
         Reservation reservation = item.reservation();
@@ -37,7 +40,8 @@ public record MyReservationResponse(
                 reservation.getSeats(),
                 reservation.getStatus(),
                 reservation.getCreatedAt(),
-                reservation.getPaymentFailureCode()
+                reservation.getPaymentFailureCode(),
+                event != null && event.getStatus() == EventStatus.CANCELLED
         );
     }
 }

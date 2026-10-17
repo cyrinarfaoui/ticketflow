@@ -74,7 +74,7 @@ class OverbookingConcurrencyTest {
             tasks.add(pool.submit(() -> {
                 startSignal.await();                                  // chaque thread attend le départ
                 try {
-                    reservationService.createReservation(eventId, userId, 1, "pm_card_visa");
+                    reservationService.createReservation(eventId, userId, userId + "@mail.test", 1, "pm_card_visa");
                     successes.incrementAndGet();
                 } catch (RuntimeException refused) {
                     // "Pas assez de places" : c'est le comportement attendu pour 40 utilisateurs

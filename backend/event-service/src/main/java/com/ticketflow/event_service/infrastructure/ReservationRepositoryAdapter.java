@@ -44,6 +44,17 @@ public class ReservationRepositoryAdapter implements ReservationRepository {
     }
 
     @Override
+    public void saveAll(List<Reservation> reservations) {
+        jpaRepository.saveAll(reservations.stream().map(ReservationMapper::toEntity).toList());
+    }
+
+    @Override
+    public List<Reservation> findActiveByEventId(UUID eventId) {
+        return jpaRepository.findByEventIdAndStatusIn(eventId, List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED))
+                .stream().map(ReservationMapper::toDomain).toList();
+    }
+
+    @Override
     public List<Reservation> findByUserId(String userId) {
         return jpaRepository.findByUserIdOrderByCreatedAtDesc(userId).stream().map(ReservationMapper::toDomain).toList();
     }

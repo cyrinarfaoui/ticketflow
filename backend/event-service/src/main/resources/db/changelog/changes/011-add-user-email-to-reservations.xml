@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        E-mail de contact du client (ticket #17) : permet de le prévenir si l'événement est annulé.
+        Nullable : les réservations existantes n'en ont pas (elles seront comptées "sans e-mail").
+    -->
+    <changeSet id="011-add-user-email-to-reservations" author="cyrine">
+        <addColumn tableName="reservations">
+            <column name="user_email" type="varchar(254)"/>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>

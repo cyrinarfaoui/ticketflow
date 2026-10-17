@@ -31,6 +31,7 @@ class ReservationControllerTest {
     private static final Jwt JWT = Jwt.withTokenValue("token")
             .header("alg", "RS256")
             .subject("user-1")
+            .claim("email", "user1@mail.test")
             .build();
 
     @Mock
@@ -47,7 +48,7 @@ class ReservationControllerTest {
     void cree_la_reservation_au_nom_de_l_utilisateur_du_jeton() {
         UUID eventId = UUID.randomUUID();
         Reservation reservation = new Reservation(UUID.randomUUID(), eventId, "user-1", 2);
-        when(reservationService.createReservation(eventId, "user-1", 2, "pm_card_visa")).thenReturn(reservation);
+        when(reservationService.createReservation(eventId, "user-1", "user1@mail.test", 2, "pm_card_visa")).thenReturn(reservation);
 
         var response = controller.createReservation(eventId, new CreateReservationRequest(2, "pm_card_visa"), JWT);
 

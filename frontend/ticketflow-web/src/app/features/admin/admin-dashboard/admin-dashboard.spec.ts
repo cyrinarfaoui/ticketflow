@@ -314,5 +314,34 @@ describe('AdminDashboard (intégration)', () => {
 
       httpMock.expectOne(`${API_BASE_URL}/events`).flush([{ ...EVENTS[0], status: 'CLOSED' }, EVENTS[1]]);
     });
+
+    it("annule un événement, suit l'avancement puis affiche le bilan", async () => {
+      spyOn(window, 'confirm').and.returnValue(true);
+      await open();
+      await respond();
+
+      [...element.querySelectorAll('button')].find((b) => b.textContent?.includes("Annuler l'événement"))!.click();
+
+      const cancel = httpMock.expectOne(`${API_BASE_URL}/events/e1/cancel`);
+      expect(cancel.request.method).toBe('POST');
+      cancel.flush({ status: 'RUNNING', report: null, error: null });
+
+      // startWith(0) : le suivi est interrogé tout de suite
+      httpMock.expectOne(`${API_BASE_URL}/events/e1/cancellation`).flush({
+        status: 'DONE',
+        report: { cancelledReservations: 3, notified: 2, failed: 1, withoutEmail: 0 },
+        error: null,
+      });
+      TestBed.tick();
+
+      // Bilan terminé : le dashboard recharge ses 3 sources
+      httpMock.expectOne(`${API_BASE_URL}/reservations/stats`).flush(STATS);
+      reservationsRequest().flush(page([PENDING, CANCELLED]));
+      httpMock.expectOne(`${API_BASE_URL}/events`).flush([{ ...EVENTS[0], status: 'CANCELLED' }, EVENTS[1]]);
+      await render();
+
+      expect(element.querySelector('.success')?.textContent)
+        .toContain('3 réservation(s) annulée(s), 2 client(s) prévenu(s) par e-mail, 1 échec(s)');
+    });
   });
 });

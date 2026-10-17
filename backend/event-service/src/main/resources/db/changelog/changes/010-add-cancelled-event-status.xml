@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Nouveau statut CANCELLED (ticket #17) : on remplace la contrainte CHECK posée par 006 -->
+    <changeSet id="010-add-cancelled-event-status" author="cyrine">
+        <sql>
+            ALTER TABLE events DROP CONSTRAINT events_status_check;
+            ALTER TABLE events ADD CONSTRAINT events_status_check
+                CHECK (status IN ('OPEN', 'CLOSED', 'CANCELLED'));
+        </sql>
+        <rollback>
+            <sql>
+                ALTER TABLE events DROP CONSTRAINT events_status_check;
+                ALTER TABLE events ADD CONSTRAINT events_status_check
+                    CHECK (status IN ('OPEN', 'CLOSED'));
+            </sql>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>
