@@ -133,6 +133,36 @@ describe('EventCard', () => {
       expect(emitted).toBe(3);
     });
 
+    it('refuse plus de places que disponibles, AVANT le paiement', () => {
+      render(createEvent({ availableSeats: 36 }));
+      let emitted: number | undefined;
+      component.reserve.subscribe((seats) => (emitted = seats));
+
+      const input = element.querySelector<HTMLInputElement>('input[type="number"]')!;
+      input.value = '60';
+      input.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      const button = element.querySelector<HTMLButtonElement>('.reserve-row button')!;
+      button.click();
+
+      expect(element.querySelector('.seats-error')?.textContent).toContain('Il ne reste que 36 place(s).');
+      expect(button.disabled).toBeTrue();
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+      expect(emitted).toBeUndefined();   // pas de fenêtre de paiement
+    });
+
+    it('refuse 0 place', () => {
+      render(createEvent());
+
+      const input = element.querySelector<HTMLInputElement>('input[type="number"]')!;
+      input.value = '0';
+      input.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      expect(element.querySelector('.seats-error')?.textContent).toContain('Choisissez au moins 1 place.');
+      expect(element.querySelector<HTMLButtonElement>('.reserve-row button')!.disabled).toBeTrue();
+    });
+
     it('ne propose plus de choisir le résultat du paiement sur la carte', () => {
       render(createEvent());
 

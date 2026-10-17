@@ -1,5 +1,7 @@
 .payment {
-  width: min(28rem, calc(100vw - 2rem));
+  width: min(32rem, calc(100vw - 2rem));
+  box-sizing: border-box;
+  overflow-x: hidden;   // jamais de défilement horizontal dans la fenêtre
   padding: 1.5rem;
   border: none;
   border-radius: 14px;
@@ -26,17 +28,6 @@
     margin: 0;
     font-size: 1.25rem;
   }
-}
-
-// Comme le bandeau "TEST MODE" de Stripe : on ne confond jamais test et réel
-.test-badge {
-  padding: 0.15rem 0.5rem;
-  border-radius: 6px;
-  background-color: #fef3c7;
-  color: #92400e;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
 }
 
 .recap {
@@ -77,6 +68,7 @@ form {
 
 .field {
   display: grid;
+  align-content: start;   // un message d'erreur dans la colonne voisine n'étire plus ce champ
   gap: 0.3rem;
 
   label {
@@ -85,6 +77,9 @@ form {
   }
 
   input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;   // la bordure et le padding restent DANS la largeur : pas de débordement
     padding: 0.6rem 0.75rem;
     border: 1px solid var(--color-border, #d1d5db);
     border-radius: 8px;
@@ -104,7 +99,7 @@ form {
 
 .field-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);   // deux colonnes égales, qui ne débordent jamais
   gap: 0.75rem;
 }
 

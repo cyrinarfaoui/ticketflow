@@ -147,6 +147,22 @@
   color: #4b5563;
 }
 
+// Nombre de places invalide : message sous la ligne, bouton grisé
+.seats-error {
+  flex-basis: 100%;
+  font-size: 0.875rem;
+  color: #b91c1c;
+}
+
+.reserve-row button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.reserve-row input[aria-invalid='true'] {
+  border-color: #b91c1c;
+}
+
 .reserve-row {
   display: flex;
   flex-wrap: wrap;   // input + liste des cartes + bouton : passe à la ligne sur mobile
