@@ -35,13 +35,11 @@
         <input type="checkbox" formControlName="availableOnly" />
         Places disponibles uniquement
       </label>
-      <button type="button" class="filters__reset" (click)="resetFilters()">Réinitialiser les filtres</button>
+      <button type="button" class="filters__reset" (click)="resetFilters()">
+        <span class="icon" aria-hidden="true">restart_alt</span> Réinitialiser
+      </button>
     </div>
   </form>
-
-  @if (authService.hasRole('ADMIN')) {
-    <a routerLink="/events/new" class="create-link">Créer un nouvel événement</a>
-  }
 
   <!-- Fenêtre de paiement : les erreurs (ex. "Pas assez de places") y sont affichées -->
   @if (checkout(); as order) {
@@ -57,12 +55,15 @@
   </p>
 
   @if (eventService.events$().length > 0) {
-    <ul class="event-list" role="list">
-      @for (event of eventService.events$(); track event.id) {
-        <li>
-          <app-event-card [event]="event" (reserve)="reserve(event, $event)" />
-        </li>
-      }
-    </ul>
+    <!-- Défilement HORIZONTAL : les cartes apparaissent entières, sans faire défiler la page -->
+    <app-carousel label="Événements" trackId="catalogue-track">
+      <ul class="carousel-list" role="list">
+        @for (event of eventService.events$(); track event.id) {
+          <li>
+            <app-event-card [event]="event" [bookable]="!authService.hasRole('ADMIN')" (reserve)="reserve(event, $event)" />
+          </li>
+        }
+      </ul>
+    </app-carousel>
   }
 </div>

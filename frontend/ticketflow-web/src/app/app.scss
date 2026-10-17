@@ -86,3 +86,17 @@
   font-weight: 700;
   text-align: center;
 }
+
+// Cible du lien d'évitement : pas de contour quand elle reçoit le focus par programme
+.page-content:focus {
+  outline: none;
+}
+
+// Icônes du menu : alignées avec le texte
+.app-nav a,
+.app-logo,
+.app-auth button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}

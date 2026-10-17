@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -61,5 +62,13 @@ class EventControllerTest {
         when(cancellationJobs.find(eventId)).thenReturn(Optional.empty());
 
         assertThat(controller.cancellationStatus(eventId).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void supprimer_repond_204() {
+        var response = controller.deleteEvent(eventId);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        verify(eventService).deleteEvent(eventId);
     }
 }

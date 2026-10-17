@@ -2,7 +2,10 @@ package com.ticketflow.event_service.infrastructure;
 
 import com.ticketflow.event_service.application.port.out.EventRepository;
 import com.ticketflow.event_service.domain.Event;
+import com.ticketflow.event_service.domain.EventStatus;
 import com.ticketflow.event_service.domain.EventCategory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -50,5 +53,15 @@ public class EventRepositoryAdapter implements EventRepository {
     @Override
     public Optional<Event> findByIdForUpdate(UUID id) {
         return jpaRepository.findByIdForUpdate(id).map(EventMapper::toDomain);
+    }
+
+    @Override
+    public Page<Event> searchForAdmin(String title, EventStatus status, Pageable pageable) {
+        return jpaRepository.searchForAdmin(title, status, pageable).map(EventMapper::toDomain);
+    }
+
+    @Override
+    public void deleteById(UUID id) {
+        jpaRepository.deleteById(id);
     }
 }

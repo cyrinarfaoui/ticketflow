@@ -4,3 +4,6 @@ target/
 node_modules/
 dist/
 *.log
+
+# Fichiers de verrou Office (fichier ouvert dans Excel/Word)
+~$*

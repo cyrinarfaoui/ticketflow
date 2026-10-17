@@ -1,3 +1,4 @@
+import { accessibleText } from '../../../../testing/accessible-text';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -109,7 +110,7 @@ describe('FeaturedEvents', () => {
     httpMock.expectOne(`${API_BASE_URL}/events`);
 
     const link = element.querySelector<HTMLAnchorElement>('.featured__all');
-    expect(link?.textContent?.trim()).toBe('Voir tous les événements');
+    expect(accessibleText(link)).toBe('Voir tous les événements');
     expect(link?.getAttribute('href')).toBe('/evenements');
   });
 });

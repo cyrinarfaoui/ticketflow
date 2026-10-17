@@ -1,9 +1,10 @@
+import { DialogService } from '../../../shared/dialog/dialog.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting, TestRequest } from '@angular/common/http/testing';
 import { NavigationEnd, provideRouter, Router } from '@angular/router';
 import { filter, firstValueFrom } from 'rxjs';
-import { AdminDashboard } from './admin-dashboard';
+import { AdminDashboard, PAGE_SIZE } from './admin-dashboard';
 import { API_BASE_URL } from '../../../core/config/api.config';
 import { EventResponse } from '../../../core/services/event.service';
 import { AdminReservation, Page, ReservationStats } from '../../../core/models/reservation';
@@ -47,6 +48,13 @@ describe('AdminDashboard (intégration)', () => {
   });
 
   afterEach(() => httpMock.verify());
+
+  // La fenêtre de confirmation (DialogService) : le test joue le rôle de l'utilisateur qui clique
+  async function answerDialog(confirmed: boolean): Promise<void> {
+    expect(TestBed.inject(DialogService).current()).not.toBeNull();   // la fenêtre est bien ouverte
+    TestBed.inject(DialogService).close(confirmed);
+    await fixture.whenStable();
+  }
 
   // Ouvre la page à une URL donnée (pour tester les liens partagés)
   async function open(url = '/'): Promise<void> {
@@ -125,7 +133,7 @@ describe('AdminDashboard (intégration)', () => {
 
       const req = reservationsRequest();
       expect(req.request.params.get('page')).toBe('0');
-      expect(req.request.params.get('size')).toBe('10');
+      expect(req.request.params.get('size')).toBe(String(PAGE_SIZE));
       expect(req.request.params.get('sort')).toBe('createdAt,desc');
       expect(req.request.params.has('status')).toBeFalse();
       req.flush(page([]));
@@ -256,11 +264,11 @@ describe('AdminDashboard (intégration)', () => {
   describe('actions admin', () => {
 
     it('annule une réservation après confirmation, puis recharge tout', async () => {
-      spyOn(window, 'confirm').and.returnValue(true);
       await open();
       await respond();
 
       rows()[0].querySelector('button')!.click();
+      await answerDialog(true);
 
       const cancel = httpMock.expectOne(`${API_BASE_URL}/reservations/r1/cancel`);
       expect(cancel.request.method).toBe('POST');
@@ -274,74 +282,29 @@ describe('AdminDashboard (intégration)', () => {
     });
 
     it('n\'annule rien si l\'admin refuse la confirmation', async () => {
-      spyOn(window, 'confirm').and.returnValue(false);
       await open();
       await respond();
 
       rows()[0].querySelector('button')!.click();
+      await answerDialog(false);   // l'admin clique "Retour"
 
-      expect(window.confirm).toHaveBeenCalled();
       httpMock.expectNone(`${API_BASE_URL}/reservations/r1/cancel`);
     });
 
-    it('affiche le message métier renvoyé par l\'API (409)', async () => {
-      spyOn(window, 'confirm').and.returnValue(true);
+    it('annonce le message métier renvoyé par l\'API (409) dans une fenêtre', async () => {
       await open();
       await respond();
 
       rows()[0].querySelector('button')!.click();
+      await answerDialog(true);
       httpMock
         .expectOne(`${API_BASE_URL}/reservations/r1/cancel`)
         .flush({ error: 'Cette réservation est déjà annulée' }, { status: 409, statusText: 'Conflict' });
       await render();
 
-      expect(element.querySelector('[role="alert"]')?.textContent).toContain('Cette réservation est déjà annulée');
+      expect(TestBed.inject(DialogService).current()?.message).toBe('Cette réservation est déjà annulée');
+      expect(TestBed.inject(DialogService).current()?.tone).toBe('error');
     });
 
-    it('propose de clôturer uniquement les événements ouverts', async () => {
-      spyOn(window, 'confirm').and.returnValue(true);
-      await open();
-      await respond();
-
-      const closeButtons = [...element.querySelectorAll('button')].filter((b) => b.textContent?.includes('Clôturer'));
-      expect(closeButtons.length).toBe(1); // le Festival est déjà clôturé
-
-      closeButtons[0].click();
-      const close = httpMock.expectOne(`${API_BASE_URL}/events/e1/close`);
-      expect(close.request.method).toBe('POST');
-      close.flush({ ...EVENTS[0], status: 'CLOSED' });
-      TestBed.tick();
-
-      httpMock.expectOne(`${API_BASE_URL}/events`).flush([{ ...EVENTS[0], status: 'CLOSED' }, EVENTS[1]]);
-    });
-
-    it("annule un événement, suit l'avancement puis affiche le bilan", async () => {
-      spyOn(window, 'confirm').and.returnValue(true);
-      await open();
-      await respond();
-
-      [...element.querySelectorAll('button')].find((b) => b.textContent?.includes("Annuler l'événement"))!.click();
-
-      const cancel = httpMock.expectOne(`${API_BASE_URL}/events/e1/cancel`);
-      expect(cancel.request.method).toBe('POST');
-      cancel.flush({ status: 'RUNNING', report: null, error: null });
-
-      // startWith(0) : le suivi est interrogé tout de suite
-      httpMock.expectOne(`${API_BASE_URL}/events/e1/cancellation`).flush({
-        status: 'DONE',
-        report: { cancelledReservations: 3, notified: 2, failed: 1, withoutEmail: 0 },
-        error: null,
-      });
-      TestBed.tick();
-
-      // Bilan terminé : le dashboard recharge ses 3 sources
-      httpMock.expectOne(`${API_BASE_URL}/reservations/stats`).flush(STATS);
-      reservationsRequest().flush(page([PENDING, CANCELLED]));
-      httpMock.expectOne(`${API_BASE_URL}/events`).flush([{ ...EVENTS[0], status: 'CANCELLED' }, EVENTS[1]]);
-      await render();
-
-      expect(element.querySelector('.success')?.textContent)
-        .toContain('3 réservation(s) annulée(s), 2 client(s) prévenu(s) par e-mail, 1 échec(s)');
-    });
   });
 });

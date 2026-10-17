@@ -23,4 +23,6 @@ public interface ReservationRepository {
     List<Reservation> findByUserId(String userId);
     long countCreatedSince(Instant since);
     Map<ReservationStatus, Long> countByStatus();
+    // Au moins une réservation (quel que soit son statut) pour cet événement ?
+    boolean existsByEventId(UUID eventId);
 }

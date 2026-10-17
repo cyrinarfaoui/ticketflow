@@ -32,4 +32,6 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
 
     @Query("SELECT r.status AS status, COUNT(r) AS total FROM ReservationEntity r GROUP BY r.status")
     List<StatusCount> countByStatus();
+
+    boolean existsByEventId(UUID eventId);
 }

@@ -113,12 +113,12 @@ describe('EventList (intégration)', () => {
       expect(authService.hasRole).toHaveBeenCalledWith('ADMIN');
     });
 
-    it('affiche le lien de création pour un admin', () => {
+    it("ne propose plus de lien de création dans le catalogue (il est dans le back-office)", () => {
       authService.hasRole.and.returnValue(true);
 
       loadPage();
 
-      expect(element.querySelector('.create-link')).not.toBeNull();
+      expect(element.querySelector('.create-link')).toBeNull();
     });
   });
 
@@ -260,6 +260,13 @@ describe('EventList (intégration)', () => {
 
       expect(component.checkout()).toBeNull();
       httpMock.expectNone(`${API_BASE_URL}/reservations/me`);
+    });
+
+    it("ne propose pas de réserver à l'admin", () => {
+      authService.hasRole.and.returnValue(true);
+      loadPage();
+
+      expect(element.querySelector('.reserve-row')).toBeNull();
     });
   });
 });

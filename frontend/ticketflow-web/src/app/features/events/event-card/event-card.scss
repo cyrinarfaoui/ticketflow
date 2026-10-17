@@ -229,3 +229,18 @@
   font-size: 0.75rem;
   font-weight: 600;
 }
+
+// Icônes des cartes : discrètes, alignées avec le texte
+.event-location .icon,
+.event-time .icon {
+  margin-right: 0.15rem;
+  font-size: 1.05em;
+  color: #6b7280;
+}
+
+.reserve-row button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}

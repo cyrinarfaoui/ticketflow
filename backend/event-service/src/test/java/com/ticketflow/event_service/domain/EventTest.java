@@ -244,4 +244,50 @@ public class EventTest {
 
         assertThatThrownBy(event::close).isInstanceOf(IllegalStateException.class);  // annulé → clôturé : interdit
     }
+
+    // ---------- Modification (back-office) ----------
+
+    @Test
+    void modifier_conserve_les_places_deja_reservees() {
+        Event event = newEvent();   // 50 places
+        event.book(30);
+
+        event.update("Concert de jazz (nouvelle date)", "Description", "Sousse", EventCategory.CONCERT,
+                LocalDateTime.now().plusDays(60), 80, 7_000);
+
+        assertThat(event.getTitle()).isEqualTo("Concert de jazz (nouvelle date)");
+        assertThat(event.getTotalSeats()).isEqualTo(80);
+        assertThat(event.getAvailableSeats()).isEqualTo(50);   // 80 - 30 déjà réservées
+        assertThat(event.getPriceCents()).isEqualTo(7_000);
+    }
+
+    @Test
+    void on_ne_descend_pas_sous_les_places_deja_reservees() {
+        Event event = newEvent();
+        event.book(30);
+
+        assertThatThrownBy(() -> event.update("Concert", "", "Tunis", EventCategory.CONCERT,
+                LocalDateTime.now().plusDays(30), 20, 5_000))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("30 place(s) déjà réservée(s)");
+    }
+
+    @Test
+    void on_ne_modifie_pas_un_evenement_annule() {
+        Event event = newEvent();
+        event.cancel();
+
+        assertThatThrownBy(() -> event.update("Concert", "", "Tunis", EventCategory.CONCERT,
+                LocalDateTime.now().plusDays(30), 50, 5_000))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void modifier_avec_un_titre_vide_est_refuse() {
+        Event event = newEvent();
+
+        assertThatThrownBy(() -> event.update(" ", "", "Tunis", EventCategory.CONCERT,
+                LocalDateTime.now().plusDays(30), 50, 5_000))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }

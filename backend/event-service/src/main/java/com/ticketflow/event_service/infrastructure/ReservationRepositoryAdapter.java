@@ -72,4 +72,11 @@ public class ReservationRepositoryAdapter implements ReservationRepository {
                         ReservationJpaRepository.StatusCount::getTotal));
     }
 
+    @Override
+    public boolean existsByEventId(UUID eventId) {
+        return jpaRepository.existsByEventId(eventId);
+    }
+
+
+
 }

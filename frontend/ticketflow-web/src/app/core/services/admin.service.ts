@@ -1,10 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { exhaustMap, interval, Observable, startWith, switchMap, takeWhile } from 'rxjs';
 import { API_BASE_URL } from '../config/api.config';
 import { AdminReservation } from '../models/reservation';
 import { CancellationJob } from '../models/cancellation';
-import { EventResponse } from './event.service';
+import { CreateEventPayload, EventResponse } from './event.service';
 
 /**
  * Actions de l'administrateur (écritures).
@@ -30,5 +30,23 @@ export class AdminService {
 
   cancellationStatus(id: string): Observable<CancellationJob> {
     return this.http.get<CancellationJob>(`${API_BASE_URL}/events/${id}/cancellation`);
+  }
+    updateEvent(id: string, payload: CreateEventPayload): Observable<EventResponse> {
+    return this.http.put<EventResponse>(`${API_BASE_URL}/events/${id}`, payload);
+  }
+
+  deleteEvent(id: string): Observable<void> {
+    return this.http.delete<void>(`${API_BASE_URL}/events/${id}`);
+  }
+
+    // Lance l'annulation (202), puis suit l'avancement chaque seconde jusqu'à DONE ou FAILED
+  cancelEventAndWait(id: string): Observable<CancellationJob> {
+    return this.cancelEvent(id).pipe(
+      switchMap(() => interval(1000).pipe(
+        startWith(0),
+        exhaustMap(() => this.cancellationStatus(id)),
+        takeWhile((job) => job.status === 'RUNNING', true),
+      )),
+    );
   }
 }

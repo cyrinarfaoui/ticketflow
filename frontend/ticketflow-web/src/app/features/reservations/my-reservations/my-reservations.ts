@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ReservationStore } from '../../../core/stores/reservation.store';
 import { MyReservation, ReservationStatus } from '../../../core/models/reservation';
+import { DialogService } from '../../../shared/dialog/dialog.service';
 import { declineLabel } from '../../../core/models/payment';
 
 // Chaque statut a un libellé ET une icône : l'information ne repose jamais sur la couleur seule (RGAA)
@@ -24,6 +25,7 @@ const STATUS_DISPLAY: Record<ReservationStatus, { label: string; icon: string }>
 export class MyReservations implements OnInit {
 
   private readonly authService = inject(AuthService);
+  private readonly dialog = inject(DialogService);
 
   // Lu dans le JWT, côté navigateur : UNIQUEMENT pour l'affichage.
   // Le jeton peut être lu (et même modifié) par l'utilisateur : le backend ne fait confiance qu'à sa signature.
@@ -51,8 +53,14 @@ export class MyReservations implements OnInit {
     return reservation.status === 'PENDING' || reservation.status === 'CONFIRMED';
   }
 
-  cancel(reservation: MyReservation): void {
-    if (!confirm(`Annuler votre réservation de ${reservation.seats} place(s) pour « ${reservation.eventTitle} » ?`)) {
+  async cancel(reservation: MyReservation): Promise<void> {
+    const confirmed = await this.dialog.confirm({
+      title: 'Annuler ma réservation',
+      message: `Votre réservation de ${reservation.seats} place(s) pour « ${reservation.eventTitle} » sera annulée.`,
+      confirmLabel: 'Annuler la réservation',
+      tone: 'danger',
+    });
+    if (!confirmed) {
       return;
     }
     this.errorMessage.set(null);

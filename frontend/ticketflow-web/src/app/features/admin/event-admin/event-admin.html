@@ -1,0 +1,166 @@
+<main class="event-admin">
+  <header class="event-admin__header">
+    <h1>Gestion des événements</h1>
+    <!-- La page de création existe déjà : on la réutilise au lieu de la recoder -->
+    <!-- La création se fait ICI, dans le panneau de droite : on ne quitte pas le back-office -->
+    <button type="button" class="primary-button" (click)="startCreation()"><span class="icon" aria-hidden="true">add</span> Nouvel événement</button>
+  </header>
+
+  @if (message()) {
+    <p class="success" role="status">{{ message() }}</p>
+  }
+
+  <div class="layout">
+
+    <!-- ========== GAUCHE : filtres + liste paginée ========== -->
+    <section class="list" aria-label="Liste des événements">
+      <div class="filters">
+        <label class="filters__search">
+          <span class="visually-hidden">Rechercher un événement par titre</span>
+          <input
+            #searchBox
+            type="search"
+            placeholder="Rechercher un titre…"
+            [value]="searchInput()"
+            (input)="onSearch(searchBox.value)"
+          />
+        </label>
+        <label>
+          <span class="visually-hidden">Filtrer par statut</span>
+          <select #statusBox (change)="onStatusChange(statusBox.value)">
+            <option value="">Tous les statuts</option>
+            <option value="OPEN">Ouverts</option>
+            <option value="CLOSED">Clôturés</option>
+            <option value="CANCELLED">Annulés</option>
+          </select>
+        </label>
+      </div>
+
+      <p class="count" role="status">
+        {{ currentPage()?.totalElements ?? 0 }} événement(s)
+        @if (events.isLoading()) { <span class="loading">· chargement…</span> }
+      </p>
+
+      <ul class="items">
+        @for (event of list(); track event.id) {
+          <li>
+            <button
+              type="button"
+              class="list-item"
+              [class.is-selected]="event.id === selectedId()"
+              [attr.aria-pressed]="event.id === selectedId()"
+              (click)="select(event)"
+            >
+              <!-- Ligne compacte : titre et statut sur la même ligne, détails dessous -->
+              <span class="list-item__top">
+                <span class="list-item__title">{{ event.title }}</span>
+                <span class="badge" [attr.data-status]="isPast(event) && event.status !== 'CANCELLED' ? 'PAST' : event.status">
+                  {{ event.status === 'CANCELLED' ? 'Annulé' : isPast(event) ? 'Passé' : event.status === 'CLOSED' ? 'Clôturé' : 'Ouvert' }}
+                </span>
+              </span>
+              <span class="list-item__meta">
+                {{ event.date | date: 'dd/MM/yyyy HH:mm' }} · {{ event.totalSeats - event.availableSeats }}/{{ event.totalSeats }} réservées
+              </span>
+            </button>
+          </li>
+        } @empty {
+          <li class="empty">Aucun événement ne correspond aux filtres.</li>
+        }
+      </ul>
+
+      @if ((currentPage()?.totalPages ?? 0) > 1) {
+        <nav class="pagination" aria-label="Pagination des événements">
+          <button type="button" [disabled]="page() === 0" (click)="goToPage(page() - 1)">Précédente</button>
+          <span>Page {{ page() + 1 }} sur {{ currentPage()?.totalPages }}</span>
+          <button type="button" [disabled]="page() + 1 >= (currentPage()?.totalPages ?? 1)" (click)="goToPage(page() + 1)">Suivante</button>
+        </nav>
+      }
+    </section>
+
+    <!-- ========== DROITE : création OU édition, avec le MÊME formulaire ========== -->
+    <section class="detail" [attr.aria-label]="creating() ? 'Nouvel événement' : 'Détail de l\'événement'">
+      @if (creating() || selected()) {
+        @let event = selected();
+        <form [formGroup]="form" (ngSubmit)="save()">
+          <div class="detail__header">
+            @if (creating()) {
+              <h2><span class="icon" aria-hidden="true">add_circle</span> Nouvel événement</h2>
+            } @else if (event) {
+              <h2>{{ event.title }}</h2>
+              <span class="badge" [attr.data-status]="isPast(event) && event.status !== 'CANCELLED' ? 'PAST' : event.status">
+                {{ event.status === 'CANCELLED' ? 'Annulé' : isPast(event) ? 'Passé' : event.status === 'CLOSED' ? 'Clôturé' : 'Ouvert' }}
+              </span>
+            }
+          </div>
+
+          <!-- Grille 2 colonnes : le formulaire tient dans l'écran, sans défiler -->
+          <div class="fields">
+            <label>Titre <input formControlName="title" placeholder="Ex. Concert de jazz" /></label>
+            <label>Lieu <input formControlName="location" placeholder="Ex. Théâtre municipal, Tunis" /></label>
+            <label>Catégorie
+              <select formControlName="category">
+                <option value="" disabled>Choisir une catégorie</option>
+                @for (category of categories; track category.value) {
+                  <option [value]="category.value">{{ category.label }}</option>
+                }
+              </select>
+            </label>
+            <label>Date <input type="datetime-local" formControlName="date" /></label>
+            @let booked = event ? event.totalSeats - event.availableSeats : 0;
+            @let remaining = form.controls.totalSeats.value - booked;
+            <label>Capacité totale
+              <input type="number" [min]="booked || 1" formControlName="totalSeats" aria-describedby="seats-hint" />
+              <!-- Recalculé pendant la frappe : l'admin voit l'effet de son changement avant d'enregistrer -->
+              @if (event && !creating()) {
+                <span id="seats-hint" class="hint" [class.hint--error]="remaining < 0">
+                  {{ booked }} réservée(s) par des clients ·
+                  @if (remaining >= 0) {
+                    {{ remaining }} disponible(s)
+                  } @else {
+                    impossible : minimum {{ booked }}
+                  }
+                </span>
+              }
+            </label>
+            <label>Prix (TND) <input type="number" min="0.01" step="0.01" formControlName="price" /></label>
+            <label class="fields__full">Description <textarea rows="2" formControlName="description"></textarea></label>
+          </div>
+
+          @if (form.invalid && form.touched) {
+            <p class="error" role="alert">Vérifiez les champs encadrés en rouge.</p>
+          }
+          @if (event && !creating()) {
+            @if (event.status === 'CANCELLED') {
+              <p class="hint">Événement annulé : il ne peut plus être modifié.</p>
+            } @else if (isPast(event)) {
+              <p class="hint">Événement passé : il a déjà eu lieu, il ne peut plus être modifié.</p>
+            }
+          }
+
+          <!-- Toutes les actions sur une seule ligne, en bas du panneau -->
+          <div class="actions">
+            @if (creating()) {
+              <button type="submit" class="primary-button"><span class="icon" aria-hidden="true">add</span> Créer l'événement</button>
+              <button type="button" (click)="cancelCreation()"><span class="icon" aria-hidden="true">arrow_back</span> Retour</button>
+            } @else if (event) {
+              <button type="submit" class="primary-button" [disabled]="form.disabled"><span class="icon" aria-hidden="true">save</span> Enregistrer</button>
+              @if (event.status === 'OPEN' && !isPast(event)) {
+                <button type="button" (click)="close(event)"><span class="icon" aria-hidden="true">lock</span> Clôturer les réservations</button>
+              }
+              @if (!isReadOnly(event)) {
+                <button type="button" class="danger" (click)="cancelEvent(event)"><span class="icon" aria-hidden="true">event_busy</span> Annuler l'événement</button>
+              }
+              <button type="button" class="danger" (click)="remove(event)"><span class="icon" aria-hidden="true">delete</span> Supprimer</button>
+            }
+          </div>
+        </form>
+      } @else {
+        <div class="empty-state">
+          <span class="icon empty-state__icon" aria-hidden="true">touch_app</span>
+          <p>Sélectionnez un événement dans la liste pour le modifier, ou créez-en un nouveau.</p>
+        </div>
+      }
+    </section>
+
+  </div>
+</main>

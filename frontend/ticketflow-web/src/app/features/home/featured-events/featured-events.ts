@@ -1,6 +1,7 @@
 import { Component, computed } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { EventCard } from '../../events/event-card/event-card';
+import { Carousel } from '../../../shared/carousel/carousel';
 import { EventResponse } from '../../../core/services/event.service';
 import { API_BASE_URL } from '../../../core/config/api.config';
 import { selectFeatured } from './select-featured';
@@ -8,7 +9,7 @@ import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-featured-events',
-  imports: [EventCard,RouterLink],
+  imports: [EventCard, Carousel,RouterLink],
   templateUrl: './featured-events.html',
   styleUrl: './featured-events.scss',
 })
