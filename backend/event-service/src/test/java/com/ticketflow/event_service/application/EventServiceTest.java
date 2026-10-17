@@ -1,6 +1,7 @@
 package com.ticketflow.event_service.application;
 
 import com.ticketflow.event_service.application.port.out.EventRepository;
+import com.ticketflow.event_service.application.port.out.ReservationRepository;
 import com.ticketflow.event_service.domain.Event;
 import com.ticketflow.event_service.domain.EventCategory;
 import com.ticketflow.event_service.domain.EventStatus;
@@ -23,9 +24,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class EventServiceTest {
@@ -35,6 +34,8 @@ class EventServiceTest {
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-03T09:00:00Z"), ZONE);
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 10, 3, 10, 0);
 
+    @Mock private ReservationRepository reservationRepository;
+
     @Mock
     private EventRepository eventRepository;
 
@@ -42,8 +43,7 @@ class EventServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new EventService(eventRepository, CLOCK);
-    }
+        service = new EventService(eventRepository, reservationRepository, CLOCK);}
 
     @Test
     void sans_dates_ne_cherche_que_les_evenements_a_venir() {
@@ -117,5 +117,68 @@ class EventServiceTest {
         when(eventRepository.findByIdForUpdate(inconnu)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.closeEvent(inconnu)).isInstanceOf(NoSuchElementException.class);
+    }
+
+    // ---------- Back-office (ticket #19) ----------
+
+    @Test
+    void modifier_delegue_les_regles_a_l_evenement_puis_sauvegarde() {
+        Event event = new Event(UUID.randomUUID(), "Concert", "", "Tunis", EventCategory.CONCERT, NOW.plusDays(5), 50, 5_000);
+        when(eventRepository.findByIdForUpdate(event.getId())).thenReturn(Optional.of(event));
+        when(eventRepository.save(any(Event.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Event updated = service.updateEvent(event.getId(), "Concert (nouvelle salle)", "", "Sousse",
+                EventCategory.CONCERT, NOW.plusDays(10), 80, 6_000);
+
+        assertThat(updated.getLocation()).isEqualTo("Sousse");
+        assertThat(updated.getTotalSeats()).isEqualTo(80);
+        verify(eventRepository).save(event);
+    }
+
+    @Test
+    void refuse_de_modifier_un_evenement_deja_passe() {
+        Event past = new Event(UUID.randomUUID(), "Concert", "", "Tunis", EventCategory.CONCERT, NOW.minusDays(1), 50, 5_000);
+        when(eventRepository.findByIdForUpdate(past.getId())).thenReturn(Optional.of(past));
+
+        assertThatThrownBy(() -> service.updateEvent(past.getId(), "Concert", "", "Tunis",
+                EventCategory.CONCERT, NOW.plusDays(10), 50, 5_000))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("passé");
+        verify(eventRepository, never()).save(any());
+    }
+
+    @Test
+    void supprime_un_evenement_sans_reservation() {
+        UUID id = UUID.randomUUID();
+        when(eventRepository.findByIdForUpdate(id)).thenReturn(Optional.of(
+                new Event(id, "Concert", "", "Tunis", EventCategory.CONCERT, NOW.plusDays(5), 50, 5_000)));
+        when(reservationRepository.existsByEventId(id)).thenReturn(false);
+
+        service.deleteEvent(id);
+
+        verify(eventRepository).deleteById(id);
+    }
+
+    @Test
+    void refuse_de_supprimer_un_evenement_qui_a_des_reservations() {
+        UUID id = UUID.randomUUID();
+        when(eventRepository.findByIdForUpdate(id)).thenReturn(Optional.of(
+                new Event(id, "Concert", "", "Tunis", EventCategory.CONCERT, NOW.plusDays(5), 50, 5_000)));
+        when(reservationRepository.existsByEventId(id)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.deleteEvent(id))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("annulez-le");
+        verify(eventRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void liste_admin_un_titre_vide_veut_dire_pas_de_filtre() {
+        var pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+        when(eventRepository.searchForAdmin(null, null, pageable)).thenReturn(org.springframework.data.domain.Page.empty());
+
+        service.listForAdmin("   ", null, pageable);
+
+        verify(eventRepository).searchForAdmin(null, null, pageable);
     }
 }

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Back-office (ticket #19) : la liste admin filtre par statut et trie par date.
+        Avec des milliers d'événements, cet index évite à PostgreSQL de lire toute la table.
+        (La recherche "titre contient…" (LIKE '%x%') ne peut pas utiliser un index classique ;
+        à très grande échelle, on ajouterait un index trigramme pg_trgm.)
+    -->
+    <changeSet id="012-index-events-status-date" author="cyrine">
+        <createIndex tableName="events" indexName="idx_events_status_date">
+            <column name="status"/>
+            <column name="event_date"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

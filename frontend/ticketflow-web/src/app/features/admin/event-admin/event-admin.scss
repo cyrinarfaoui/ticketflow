@@ -1,0 +1,372 @@
+// La page occupe EXACTEMENT la hauteur de l'écran, moins l'en-tête du site (~88 px) :
+// pas de défilement de la page ; seule la liste défile dans son panneau si elle est longue.
+.event-admin {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-sizing: border-box;
+  height: calc(100vh - 88px);
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 1.25rem 1rem;
+}
+
+.event-admin__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.75rem;
+  }
+}
+
+// Les deux colonnes prennent toute la hauteur restante, et ont donc la MÊME hauteur
+.layout {
+  flex: 1;
+  min-height: 0;   // indispensable : sans ça, un enfant flex refuse de rétrécir et la page déborde
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 1.25rem;
+}
+
+.list,
+.detail {
+  box-sizing: border-box;
+  min-height: 0;
+  padding: 1rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 12px;
+  background-color: #ffffff;
+}
+
+// Panneau de gauche : filtres en haut, liste au milieu (qui défile), pagination en bas
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+
+  input,
+  select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--color-border, #d1d5db);
+    border-radius: 8px;
+    font: inherit;
+  }
+}
+
+.count {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.loading {
+  font-style: italic;
+}
+
+.items {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;   // pas de barre de défilement : on change de page avec la pagination
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid #f3f4f6;
+  font-size: 0.9rem;
+
+  button {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--color-border, #d1d5db);
+    border-radius: 8px;
+    background: #ffffff;
+    font: inherit;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+}
+
+// Sur petit écran : une seule colonne, et on laisse la page défiler normalement
+@media (max-width: 800px) {
+  .event-admin {
+    height: auto;
+  }
+
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ---------- Liste ----------
+
+.items {
+  display: grid;
+  align-content: start;   // sans ça, la grille ÉTIRE ses lignes pour remplir la hauteur : grands vides entre les éléments
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list-item {
+  display: grid;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #f9fafb;
+  }
+
+  &.is-selected {
+    border-color: var(--color-primary, #2563eb);
+    background-color: #eff6ff;
+  }
+}
+
+.list-item__title {
+  font-weight: 700;
+}
+
+.list-item__meta {
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.badge {
+  justify-self: start;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: #dcfce7;
+  color: #166534;
+
+  &[data-status='CLOSED'] {
+    background-color: #e5e7eb;
+    color: #374151;
+  }
+
+  &[data-status='PAST'] {
+    background-color: #f3f4f6;
+    color: #4b5563;
+  }
+
+  &[data-status='CANCELLED'] {
+    background-color: #fee2e2;
+    color: #991b1b;
+  }
+}
+
+// ---------- Détail ----------
+
+form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.detail__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.35rem;
+  }
+}
+
+// Les champs sur 2 colonnes : deux fois moins de hauteur
+.fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.75rem 1rem;
+
+  label {
+    display: grid;
+    align-content: start;
+    gap: 0.25rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--color-border, #d1d5db);
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 400;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  // Champ invalide ET déjà touché : bordure rouge
+  .ng-invalid.ng-touched {
+    border-color: #b91c1c;
+  }
+}
+
+.fields__full {
+  grid-column: 1 / -1;   // la description prend les deux colonnes
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #4b5563;
+}
+
+// Les actions restent EN BAS du panneau (margin-top: auto), toutes sur une ligne
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f3f4f6;
+
+  button {
+    padding: 0.55rem 0.9rem;
+    border: 1px solid var(--color-border, #d1d5db);
+    border-radius: 8px;
+    background: #ffffff;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .danger {
+    border-color: #b91c1c;
+    color: #b91c1c;
+  }
+}
+
+.primary-button {
+  padding: 0.55rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--color-primary, #2563eb);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.actions .primary-button {
+  border: none;
+  background-color: var(--color-primary, #2563eb);
+  color: #ffffff;
+}
+
+.success {
+  margin: 0;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.error {
+  margin: 0;
+  color: #b91c1c;
+}
+
+.empty {
+  color: #4b5563;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+// Capacité inférieure aux places déjà réservées : le message passe en rouge
+.hint--error {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+// Boutons avec icône : icône et texte alignés
+.actions button,
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+// Panneau de droite vide : une invitation claire plutôt qu'un grand blanc
+.empty-state {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.5rem;
+  height: 100%;
+  color: #6b7280;
+  text-align: center;
+}
+
+.empty-state__icon {
+  font-size: 3rem;
+  color: #93c5fd;
+}
+
+// Ligne de liste compacte : titre à gauche, statut à droite
+.list-item__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.list-item {
+  gap: 0.1rem;
+  padding: 0.4rem 0.75rem;
+}

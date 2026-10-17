@@ -1,7 +1,10 @@
 package com.ticketflow.event_service.application.port.out;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import com.ticketflow.event_service.domain.Event;
 import com.ticketflow.event_service.domain.EventCategory;
+import com.ticketflow.event_service.domain.EventStatus;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -21,4 +24,7 @@ public interface EventRepository {
 
     // Lit l'événement en le verrouillant jusqu'à la fin de la transaction (réservations concurrentes)
     Optional<Event> findByIdForUpdate(UUID id);
+    // Back-office : tous les événements, filtrés et paginés
+    Page<Event> searchForAdmin(String title, EventStatus status, Pageable pageable);
+    void deleteById(UUID id);
 }

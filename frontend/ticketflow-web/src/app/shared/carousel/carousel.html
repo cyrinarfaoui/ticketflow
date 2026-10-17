@@ -1,0 +1,37 @@
+<div class="carousel">
+  <!-- tabindex="0" : la zone est atteignable au clavier, puis les flèches ← → la font défiler -->
+  <div
+    #track
+    class="carousel__track"
+    [id]="trackId()"
+    role="region"
+    tabindex="0"
+    [attr.aria-label]="label() + ' (défilement horizontal)'"
+    (scroll)="updateButtons()"
+  >
+    <ng-content />
+  </div>
+
+  @if (!atStart() || !atEnd()) {
+    <button
+      type="button"
+      class="carousel__button carousel__button--prev"
+      [attr.aria-controls]="trackId()"
+      [disabled]="atStart()"
+      (click)="scroll(-1)"
+    >
+      <span class="icon" aria-hidden="true">chevron_left</span>
+      <span class="visually-hidden">{{ label() }} précédents</span>
+    </button>
+    <button
+      type="button"
+      class="carousel__button carousel__button--next"
+      [attr.aria-controls]="trackId()"
+      [disabled]="atEnd()"
+      (click)="scroll(1)"
+    >
+      <span class="icon" aria-hidden="true">chevron_right</span>
+      <span class="visually-hidden">{{ label() }} suivants</span>
+    </button>
+  }
+</div>

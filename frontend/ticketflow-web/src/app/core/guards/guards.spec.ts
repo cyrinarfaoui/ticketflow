@@ -3,6 +3,7 @@ import { ActivatedRouteSnapshot, provideRouter, Router, RouterStateSnapshot, Url
 import { AuthService } from '../services/auth.service';
 import { adminGuard } from './admin.guard';
 import { authGuard } from './auth.guard';
+import { homeGuard } from './home.guard';
 
 /**
  * Tests unitaires des guards fonctionnels.
@@ -74,6 +75,25 @@ describe('Guards', () => {
       const result = TestBed.runInInjectionContext(() => adminGuard(route, state));
 
       expect(result).toEqual(homeUrl());
+    });
+  });
+
+  describe('homeGuard', () => {
+
+    it("envoie l'administrateur sur son tableau de bord", () => {
+      authService.hasRole.and.returnValue(true);
+
+      const result = TestBed.runInInjectionContext(() => homeGuard(route, state));
+
+      expect(result).toEqual(TestBed.inject(Router).createUrlTree(['/admin']));
+    });
+
+    it("laisse les clients et les visiteurs sur l'accueil", () => {
+      authService.hasRole.and.returnValue(false);
+
+      const result = TestBed.runInInjectionContext(() => homeGuard(route, state));
+
+      expect(result).toBeTrue();
     });
   });
 });

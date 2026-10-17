@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { MyReservations } from './my-reservations';
+import { DialogService } from '../../../shared/dialog/dialog.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { API_BASE_URL } from '../../../core/config/api.config';
 import { MyReservation } from '../../../core/models/reservation';
@@ -50,6 +51,13 @@ describe('MyReservations (intégration)', () => {
   });
 
   afterEach(() => httpMock.verify());
+
+  // La fenêtre de confirmation (DialogService) : le test joue le rôle de l'utilisateur qui clique
+  async function answerDialog(confirmed: boolean): Promise<void> {
+    expect(TestBed.inject(DialogService).current()).not.toBeNull();   // la fenêtre est bien ouverte
+    TestBed.inject(DialogService).close(confirmed);
+    await fixture.whenStable();
+  }
 
   async function respond(reservations: MyReservation[]): Promise<void> {
     httpMock.expectOne(ME_URL).flush(reservations);
@@ -140,10 +148,10 @@ describe('MyReservations (intégration)', () => {
   describe('annulation', () => {
 
       it('affiche "Annulée" immédiatement, avant même la réponse du serveur (optimiste)', async () => {
-      spyOn(window, 'confirm').and.returnValue(true);
       await respond([reservation()]);
 
       element.querySelector<HTMLButtonElement>('.cancel-button')!.click();
+      await answerDialog(true);
       fixture.detectChanges();
 
       // La requête est partie mais n'a PAS encore répondu : l'écran est déjà à jour
@@ -153,10 +161,10 @@ describe('MyReservations (intégration)', () => {
     });
 
     it('annonce le succès sans recharger toute la liste', async () => {
-      spyOn(window, 'confirm').and.returnValue(true);
       await respond([reservation()]);
 
       element.querySelector<HTMLButtonElement>('.cancel-button')!.click();
+      await answerDialog(true);
       httpMock.expectOne(`${API_BASE_URL}/reservations/r1/cancel`).flush({});
       fixture.detectChanges();
 
@@ -165,20 +173,19 @@ describe('MyReservations (intégration)', () => {
     });
     
     it('ne fait rien si l\'utilisateur refuse la confirmation', async () => {
-      spyOn(window, 'confirm').and.returnValue(false);
       await respond([reservation()]);
 
       element.querySelector<HTMLButtonElement>('.cancel-button')!.click();
+      await answerDialog(false);   // l'utilisateur clique "Retour"
 
-      expect(window.confirm).toHaveBeenCalled();
       httpMock.expectNone(`${API_BASE_URL}/reservations/r1/cancel`);
     });
 
     it('affiche le message métier renvoyé par l\'API (409)', async () => {
-      spyOn(window, 'confirm').and.returnValue(true);
       await respond([reservation()]);
 
       element.querySelector<HTMLButtonElement>('.cancel-button')!.click();
+      await answerDialog(true);
       httpMock
         .expectOne(`${API_BASE_URL}/reservations/r1/cancel`)
         .flush({ error: 'Cette réservation est déjà annulée' }, { status: 409, statusText: 'Conflict' });

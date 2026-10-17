@@ -1,37 +1,49 @@
+<!-- Lien d'évitement : au premier Tab, permet de sauter le menu et d'aller directement au contenu (RGAA 12.7) -->
+<a class="skip-link" href="#contenu" (click)="skipToContent($event)">Aller au contenu principal</a>
+
 <header class="app-header">
-  <a class="app-logo" routerLink="/">TicketFlow</a>
+  <a class="app-logo" routerLink="/"><span class="icon" aria-hidden="true">confirmation_number</span> TicketFlow</a>
 
   <nav class="app-nav" aria-label="Navigation principale">
-    <a
-      routerLink="/"
-      routerLinkActive="is-active"
-      [routerLinkActiveOptions]="{ exact: true }"
-      ariaCurrentWhenActive="page"
-    >Accueil</a>
-    <a
-      routerLink="/evenements"
-      routerLinkActive="is-active"
-      ariaCurrentWhenActive="page"
-    >Événements</a>
-    @if (authService.isLoggedIn()) {
-      <a
-        routerLink="/mes-reservations"
-        routerLinkActive="is-active"
-        ariaCurrentWhenActive="page"
-      >Mes réservations
-        @if (reservationStore.activeCount() > 0) {
-          <span class="nav-badge">
-            {{ reservationStore.activeCount() }}<span class="visually-hidden"> en cours</span>
-          </span>
-        }
-      </a>
-    }
     @if (authService.hasRole('ADMIN')) {
+      <!-- Parcours ADMIN : la vue d'ensemble d'abord, puis la gestion -->
       <a
         routerLink="/admin"
         routerLinkActive="is-active"
+        [routerLinkActiveOptions]="{ exact: true }"
         ariaCurrentWhenActive="page"
-      >Tableau de bord</a>
+      ><span class="icon" aria-hidden="true">dashboard</span> Tableau de bord</a>
+      <a
+        routerLink="/admin/evenements"
+        routerLinkActive="is-active"
+        ariaCurrentWhenActive="page"
+      ><span class="icon" aria-hidden="true">event_note</span> Événements</a>
+    } @else {
+      <!-- Parcours CLIENT / visiteur : découvrir, réserver, suivre ses réservations -->
+      <a
+        routerLink="/"
+        routerLinkActive="is-active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        ariaCurrentWhenActive="page"
+      ><span class="icon" aria-hidden="true">home</span> Accueil</a>
+      <a
+        routerLink="/evenements"
+        routerLinkActive="is-active"
+        ariaCurrentWhenActive="page"
+      ><span class="icon" aria-hidden="true">search</span> Événements</a>
+      @if (authService.isLoggedIn()) {
+        <a
+          routerLink="/mes-reservations"
+          routerLinkActive="is-active"
+          ariaCurrentWhenActive="page"
+        ><span class="icon" aria-hidden="true">local_activity</span> Mes réservations
+          @if (reservationStore.activeCount() > 0) {
+            <span class="nav-badge">
+              {{ reservationStore.activeCount() }}<span class="visually-hidden"> en cours</span>
+            </span>
+          }
+        </a>
+      }
     }
   </nav>
 
@@ -39,13 +51,18 @@
     <app-live-notifications />
     @if (authService.isLoggedIn()) {
       <span class="user-info">Connecté : {{ authService.username() }}</span>
-      <button type="button" (click)="authService.logout()">Se déconnecter</button>
+      <button type="button" (click)="authService.logout()"><span class="icon" aria-hidden="true">logout</span> Se déconnecter</button>
     } @else {
       <button type="button" (click)="authService.register()">S'inscrire</button>
-      <button type="button" (click)="authService.login()">Se connecter</button>
+      <button type="button" (click)="authService.login()"><span class="icon" aria-hidden="true">login</span> Se connecter</button>
     }
   </div>
 </header>
 <app-notification-banner />
+<!-- Fenêtres de confirmation et d'erreur de toute l'application (DialogService) -->
+<app-dialog-host />
 
-<router-outlet />
+<!-- Cible du lien d'évitement : tabindex=-1 permet de lui donner le focus sans l'ajouter à l'ordre du Tab -->
+<div id="contenu" tabindex="-1" class="page-content">
+  <router-outlet />
+</div>

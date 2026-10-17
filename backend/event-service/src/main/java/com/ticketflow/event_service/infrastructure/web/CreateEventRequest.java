@@ -10,14 +10,15 @@ import java.time.LocalDateTime;
 
 public record CreateEventRequest(
 
-        @NotBlank String title,
+        @NotBlank(message = "Le titre est obligatoire") String title,
         String description,
-        @NotBlank String location,
-        @NotNull EventCategory category,
-        @NotNull @Future LocalDateTime date,
-        @Positive int totalSeats,
+        @NotBlank(message = "Le lieu est obligatoire") String location,
+        @NotNull(message = "La catégorie est obligatoire") EventCategory category,
+        @NotNull(message = "La date est obligatoire")
+        @Future(message = "La date de l'événement doit être dans le futur") LocalDateTime date,
+        @Positive(message = "Il faut au moins 1 place") int totalSeats,
         // Prix d'une place en centimes (4500 = 45,00 TND)
-        @Positive long priceCents
+        @Positive(message = "Le prix doit être supérieur à 0") long priceCents
 
 ) {
 }

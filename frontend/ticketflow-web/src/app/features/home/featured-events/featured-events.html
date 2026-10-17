@@ -1,7 +1,7 @@
 <section class="featured" aria-labelledby="featured-title">
   <div class="featured__header">
     <h2 id="featured-title">À la une</h2>
-        <a class="featured__all" routerLink="/evenements">Voir tous les événements</a>
+        <a class="featured__all" routerLink="/evenements">Voir tous les événements <span class="icon" aria-hidden="true">arrow_forward</span></a>
   </div>
 
   @if (isLoading()) {
@@ -11,12 +11,14 @@
   } @else if (featured().length === 0) {
     <p class="featured__status">Aucun événement à venir pour le moment.</p>
   } @else {
-    <ul class="featured__list" role="list">
-      @for (event of featured(); track event.id) {
-        <li>
-          <app-event-card [event]="event" [bookable]="false" />
-        </li>
-      }
+    <app-carousel label="Événements à la une" trackId="featured-track">
+      <ul class="carousel-list" role="list">
+        @for (event of featured(); track event.id) {
+          <li>
+            <app-event-card [event]="event" [bookable]="false" />
+          </li>
+        }
     </ul>
+    </app-carousel>
   }
 </section>

@@ -76,6 +76,33 @@ class EventJpaRepositoryTest {
         assertThat(disponibles).isEmpty();                  // mais pas "disponible"
     }
 
+    // ---------- Back-office : filtre + pagination faits par la base (ticket #19) ----------
+
+    @Test
+    void back_office_filtre_par_titre_et_statut_et_pagine() {
+        // Titres uniques : la base de test peut déjà contenir d'autres événements
+        save("Zxq Opera A", EventCategory.THEATRE, NOW.plusDays(3), 10, EventStatus.OPEN);
+        save("Zxq Opera B", EventCategory.THEATRE, NOW.plusDays(1), 10, EventStatus.OPEN);
+        save("Zxq Opera C", EventCategory.THEATRE, NOW.plusDays(2), 10, EventStatus.OPEN);
+        save("Zxq Opera annulé", EventCategory.THEATRE, NOW.plusDays(4), 10, EventStatus.CANCELLED);
+
+        var page = repository.searchForAdmin("zxq OPERA", EventStatus.OPEN,
+                org.springframework.data.domain.PageRequest.of(0, 2, org.springframework.data.domain.Sort.by("date")));
+
+        assertThat(page.getTotalElements()).isEqualTo(3);   // l'annulé est exclu par le filtre de statut
+        assertThat(page.getTotalPages()).isEqualTo(2);
+        assertThat(titres(page.getContent())).containsExactly("Zxq Opera B", "Zxq Opera C");   // triés par date
+    }
+
+    @Test
+    void back_office_sans_filtre_renvoie_aussi_les_evenements_annules() {
+        save("Zxq Annulé seul", EventCategory.THEATRE, NOW.plusDays(3), 10, EventStatus.CANCELLED);
+
+        var page = repository.searchForAdmin("zxq annulé seul", null, org.springframework.data.domain.PageRequest.of(0, 10));
+
+        assertThat(titres(page.getContent())).containsExactly("Zxq Annulé seul");
+    }
+
     private void save(String title, EventCategory category, LocalDateTime date, int availableSeats) {
         save(title, category, date, availableSeats, EventStatus.OPEN);
     }

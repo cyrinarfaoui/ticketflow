@@ -1,11 +1,11 @@
-import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
+import { Component, computed, inject, linkedSignal } from '@angular/core';
 import { DatePipe, PercentPipe } from '@angular/common';
 import { HttpErrorResponse, httpResource } from '@angular/common/http';
 import { ActivatedRoute, ParamMap, Params, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { exhaustMap, interval, startWith, switchMap, takeWhile } from 'rxjs';
 import { API_BASE_URL } from '../../../core/config/api.config';
 import { AdminService } from '../../../core/services/admin.service';
+import { DialogService } from '../../../shared/dialog/dialog.service';
 import { EventResponse } from '../../../core/services/event.service';
 import {
   AdminReservation,
@@ -27,7 +27,8 @@ interface TableQuery {
   sortDirection: SortDirection;
 }
 
-export const PAGE_SIZE = 10;
+// 8 lignes : indicateurs + tableau + pagination tiennent dans un écran, sans défilement
+export const PAGE_SIZE = 8;
 
 @Component({
   imports: [DatePipe, PercentPipe],
@@ -40,6 +41,7 @@ export class AdminDashboard {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly adminService = inject(AdminService);
+  private readonly dialog = inject(DialogService);
 
   protected readonly statuses = RESERVATION_STATUSES;
   protected readonly statusLabel = reservationStatusLabel;
@@ -69,9 +71,6 @@ export class AdminDashboard {
   // L'API des réservations ne renvoie que l'eventId : on retrouve le titre dans la liste des événements
   private readonly eventTitles = computed(() => new Map(this.events.value().map((e) => [e.id, e.title])));
 
-  // Message d'une erreur métier (409…) ; les erreurs techniques sont affichées par la bannière globale
-  readonly actionError = signal<string | null>(null);
-  readonly actionMessage = signal<string | null>(null);
 
   eventTitle(eventId: string): string {
     return this.eventTitles().get(eventId) ?? 'Événement passé';
@@ -109,11 +108,16 @@ export class AdminDashboard {
 
   // ---------- Actions admin ----------
 
-  cancel(reservation: AdminReservation): void {
-    if (!confirm(`Annuler cette réservation de ${reservation.seats} place(s) pour « ${this.eventTitle(reservation.eventId)} » ?`)) {
+  async cancel(reservation: AdminReservation): Promise<void> {
+    const confirmed = await this.dialog.confirm({
+      title: 'Annuler la réservation',
+      message: `La réservation de ${reservation.seats} place(s) pour « ${this.eventTitle(reservation.eventId)} » sera annulée et les places rendues.`,
+      confirmLabel: 'Annuler la réservation',
+      tone: 'danger',
+    });
+    if (!confirmed) {
       return;
     }
-    this.actionError.set(null);
     this.adminService.cancelReservation(reservation.id).subscribe({
       next: () => {
         // Le statut, les compteurs et les places restantes ont changé : on recharge les trois
@@ -121,57 +125,7 @@ export class AdminDashboard {
         this.stats.reload();
         this.events.reload();
       },
-      error: (err: HttpErrorResponse) => this.actionError.set(err.error?.error ?? null),
-    });
-  }
-
-  close(event: EventResponse): void {
-    if (!confirm(`Clôturer les réservations de « ${event.title} » ? Plus personne ne pourra réserver.`)) {
-      return;
-    }
-    this.actionError.set(null);
-    this.adminService.closeEvent(event.id).subscribe({
-      next: () => this.events.reload(),
-      error: (err: HttpErrorResponse) => this.actionError.set(err.error?.error ?? null),
-    });
-  }
-
-  cancelEvent(event: EventResponse): void {
-    if (!confirm(`Annuler « ${event.title} » ? L'événement n'aura pas lieu : toutes les réservations seront annulées et chaque client prévenu par e-mail.`)) {
-      return;
-    }
-    this.actionError.set(null);
-    this.actionMessage.set(`Annulation de « ${event.title} » en cours…`);
-
-    this.adminService.cancelEvent(event.id).pipe(
-      // 202 reçu : on interroge le suivi tout de suite, puis toutes les secondes
-      switchMap(() => interval(1000).pipe(
-        startWith(0),
-        exhaustMap(() => this.adminService.cancellationStatus(event.id)),
-        takeWhile((job) => job.status === 'RUNNING', true),   // true : on garde aussi l'état final (DONE / FAILED)
-      )),
-    ).subscribe({
-      next: (job) => {
-        if (job.status === 'DONE' && job.report) {
-          const r = job.report;
-          this.actionMessage.set(
-            `« ${event.title} » annulé : ${r.cancelledReservations} réservation(s) annulée(s), ` +
-            `${r.notified} client(s) prévenu(s) par e-mail` +
-            (r.failed > 0 ? `, ${r.failed} échec(s)` : '') +
-            (r.withoutEmail > 0 ? `, ${r.withoutEmail} sans e-mail` : '') + '.',
-          );
-          this.events.reload();
-          this.reservations.reload();
-          this.stats.reload();
-        } else if (job.status === 'FAILED') {
-          this.actionMessage.set(null);
-          this.actionError.set(job.error);
-        }
-      },
-      error: (err: HttpErrorResponse) => {
-        this.actionMessage.set(null);
-        this.actionError.set(err.error?.error ?? null);
-      },
+      error: (err: HttpErrorResponse) => this.dialog.alert({ title: 'Action impossible', message: err.error?.error ?? "L'action a échoué. Réessayez." }),
     });
   }
 

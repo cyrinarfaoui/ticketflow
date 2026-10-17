@@ -1,16 +1,10 @@
 <main class="dashboard">
   <h1>Tableau de bord</h1>
 
-  @if (actionError()) {
-    <p class="error" role="alert">{{ actionError() }}</p>
-  }
-  @if (actionMessage()) {
-    <p class="success" role="status">{{ actionMessage() }}</p>
-  }
 
   <!-- ========== Indicateurs ========== -->
   <section aria-labelledby="stats-title">
-    <h2 id="stats-title">Indicateurs</h2>
+    <h2 id="stats-title" class="visually-hidden">Indicateurs</h2>
 
     @if (stats.hasValue()) {
       @let s = stats.value();
@@ -123,51 +117,4 @@
     }
   </section>
 
-  <!-- ========== Événements ========== -->
-  <section aria-labelledby="events-title">
-    <h2 id="events-title">Événements à venir</h2>
-
-    <div class="table-wrapper">
-      <table class="admin-table">
-        <caption class="visually-hidden">Événements à venir et état des réservations</caption>
-        <thead>
-          <tr>
-            <th scope="col">Titre</th>
-            <th scope="col">Date</th>
-            <th scope="col">Places restantes</th>
-            <th scope="col">Réservations</th>
-            <th scope="col"><span class="visually-hidden">Actions</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (event of events.value(); track event.id) {
-            <tr>
-              <td>{{ event.title }}</td>
-              <td>{{ event.date | date: 'dd/MM/yyyy HH:mm' }}</td>
-              <td>{{ event.availableSeats }} / {{ event.totalSeats }}</td>
-              <td>
-                <span class="badge" [attr.data-status]="event.status">{{ event.status === 'CANCELLED' ? 'Annulé' : event.status === 'CLOSED' ? 'Clôturées' : 'Ouvertes' }}</span>
-              </td>
-              <td>
-                @if (event.status === 'OPEN') {
-                  <button type="button" class="action-button" (click)="close(event)">
-                    Clôturer<span class="visually-hidden"> les réservations de {{ event.title }}</span>
-                  </button>
-                }
-                @if (event.status !== 'CANCELLED') {
-                  <button type="button" class="action-button action-button--danger" (click)="cancelEvent(event)">
-                    Annuler l'événement<span class="visually-hidden"> {{ event.title }}</span>
-                  </button>
-                }
-              </td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="5" class="empty">Aucun événement à venir.</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </section>
 </main>

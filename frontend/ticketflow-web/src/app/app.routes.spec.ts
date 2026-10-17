@@ -4,7 +4,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { AuthService } from './core/services/auth.service';
-import { EventForm } from './features/events/event-form/event-form';
+import { EventAdmin } from './features/admin/event-admin/event-admin';
 import { routes } from './app.routes';
 import { HomePage } from './features/home/home-page/home-page';
 import { EventsPage } from './features/events/events-page/events-page';
@@ -34,7 +34,7 @@ describe('Routes de l\'application (sécurité)', () => {
     authService.hasRole.and.returnValue(false);
 
     const harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl('/events/new');
+    await harness.navigateByUrl('/admin/evenements');
 
     expect(TestBed.inject(Router).url).toBe('/');
   });
@@ -44,20 +44,20 @@ describe('Routes de l\'application (sécurité)', () => {
     authService.hasRole.and.returnValue(false);
 
     const harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl('/events/new');
+    await harness.navigateByUrl('/admin/evenements');
 
     expect(TestBed.inject(Router).url).toBe('/');
   });
 
-  it('laisse un admin accéder au formulaire de création', async () => {
+  it('laisse un admin accéder au back-office des événements', async () => {
     authService.isLoggedIn.and.returnValue(true);
     authService.hasRole.and.returnValue(true);
 
     const harness = await RouterTestingHarness.create();
-    const page = await harness.navigateByUrl('/events/new', EventForm);
+    const page = await harness.navigateByUrl('/admin/evenements', EventAdmin);
 
-    expect(TestBed.inject(Router).url).toBe('/events/new');
-    expect(page).toBeInstanceOf(EventForm);
+    expect(TestBed.inject(Router).url).toBe('/admin/evenements');
+    expect(page).toBeInstanceOf(EventAdmin);
   });
 
   it('affiche la page d\'accueil à la racine du site', async () => {

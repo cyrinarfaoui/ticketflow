@@ -17,5 +17,6 @@
     <include file="changes/009-add-payment-failure-to-reservations.xml" relativeToChangelogFile="true"/>
     <include file="changes/010-add-cancelled-event-status.xml" relativeToChangelogFile="true"/>
     <include file="changes/011-add-user-email-to-reservations.xml" relativeToChangelogFile="true"/>
+    <include file="changes/012-index-events-status-date.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

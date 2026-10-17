@@ -1,5 +1,5 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, ParamMap, Params, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, ParamMap, Params, Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, Subject, catchError, combineLatest, debounceTime, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs';
@@ -8,6 +8,7 @@ import { ReservationStore } from '../../../core/stores/reservation.store';
 import { AuthService } from '../../../core/services/auth.service';
 import { EVENT_CATEGORIES, EventCategory } from '../../../core/models/event-category';
 import { EventCard } from '../event-card/event-card';
+import { Carousel } from '../../../shared/carousel/carousel';
 import { PaymentDialog } from '../payment-dialog/payment-dialog';
 
 // Les filtres du catalogue, tels qu'ils sont dans le formulaire et dans l'URL
@@ -21,7 +22,7 @@ interface CatalogFilters {
 }
 
 @Component({
-  imports: [RouterLink, ReactiveFormsModule, EventCard, PaymentDialog],
+  imports: [ReactiveFormsModule, EventCard, PaymentDialog, Carousel],
   selector: 'app-event-list',
   styleUrl: './event-list.scss',
   templateUrl: './event-list.html',

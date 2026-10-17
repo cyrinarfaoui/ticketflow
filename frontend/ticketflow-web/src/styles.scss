@@ -6,6 +6,7 @@
   --color-error: #dc2626;
   --radius: 8px;
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --content-width: 1600px;   // largeur maximale du contenu de toutes les pages
 }
 
 * {
@@ -19,10 +20,78 @@ body {
   background-color: #f9fafb;
 }
 
+// Pleine largeur : jusqu'à 1600 px (au lieu de 960), avec une marge confortable sur les côtés.
+// Au-delà de 1600 px, les lignes deviendraient trop longues à lire.
 main {
-  max-width: 960px;
+  max-width: var(--content-width);
   margin: 0 auto;
-  padding: 2rem 1.5rem;
+  padding: 1.5rem clamp(1rem, 3vw, 2.5rem);
+}
+
+// ---------- Icônes (Material Symbols) ----------
+// Toujours DÉCORATIVES : aria-hidden="true" dans le HTML, le texte reste écrit à côté
+.icon {
+  font-family: 'Material Symbols Outlined';
+  font-size: 1.25em;
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  vertical-align: -0.2em;
+  user-select: none;
+  white-space: nowrap;
+}
+
+// ---------- Rangée de cartes défilant horizontalement (contenu projeté dans <app-carousel>) ----------
+// Style global car la liste est fournie par la page qui utilise le carrousel
+.carousel-list {
+  display: grid;
+  grid-auto-flow: column;
+  // 4 cartes visibles sur grand écran ; jamais moins de 280 px de large (2 ou 1 carte sur petit écran)
+  grid-auto-columns: max(280px, calc((100% - 3 * 1rem) / 4));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  > li {
+    scroll-snap-align: start;
+  }
+}
+
+// ---------- Accessibilité (RGAA) ----------
+
+// Lien d'évitement "Aller au contenu" : invisible à la souris, il apparaît au premier Tab (critère RGAA 12.7)
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: var(--color-primary-dark);
+  font-weight: 700;
+
+  &:focus {
+    top: 0.75rem;
+  }
+}
+
+// Focus TOUJOURS visible au clavier, sur toute l'application (critère RGAA 10.7)
+:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+// Réglage système "réduire les animations" respecté (vertiges, épilepsie…)
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 h2 {

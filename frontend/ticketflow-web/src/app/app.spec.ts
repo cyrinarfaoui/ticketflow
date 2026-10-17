@@ -1,3 +1,4 @@
+import { accessibleText } from '../testing/accessible-text';
 import { Component, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
@@ -61,7 +62,7 @@ describe('App', () => {
 
   function navLink(element: HTMLElement, label: string): HTMLAnchorElement | undefined {
     return [...element.querySelectorAll<HTMLAnchorElement>('nav a')]
-      .find((a) => a.textContent?.trim() === label);
+      .find((a) => accessibleText(a) === label);   // le libellé lu par un lecteur d'écran (sans l'icône)
   }
 
   describe('connexion', () => {
@@ -211,4 +212,26 @@ describe('App', () => {
       expect(liveStore.disconnect).toHaveBeenCalled();
     });
   });
+
+    describe('navigation admin', () => {
+
+    it("mène l'admin au back-office et lui cache « Mes réservations »", async () => {
+      authService.isLoggedIn.and.returnValue(true);
+      authService.hasRole.and.callFake((role: string) => role === 'ADMIN');
+      const element = await renderAt('/');
+
+      expect(navLink(element, 'Événements')?.getAttribute('href')).toBe('/admin/evenements');
+      expect(navLink(element, 'Mes réservations')).toBeUndefined();
+    });
+
+    it('mène le client au catalogue', async () => {
+      authService.isLoggedIn.and.returnValue(true);
+      authService.hasRole.and.returnValue(false);
+      const element = await renderAt('/');
+
+      expect(navLink(element, 'Événements')?.getAttribute('href')).toBe('/evenements');
+    });
+  });
+
+
 });

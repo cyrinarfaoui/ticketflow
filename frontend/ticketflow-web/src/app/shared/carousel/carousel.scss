@@ -1,0 +1,59 @@
+.carousel {
+  position: relative;
+}
+
+.carousel__track {
+  // Indispensable : les textes "visually-hidden" des cartes sont en position absolute.
+  // Sans repère ici, ils se placent par rapport à la PAGE, échappent au défilement du carrousel
+  // et élargissent toute la page (d'où la 2e barre de défilement en bas).
+  position: relative;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;   // "aimantation" : le défilement s'arrête toujours au début d'une carte
+  scroll-padding: 0 0.25rem;
+  padding: 0.25rem 0.25rem 0.75rem;
+  scrollbar-width: thin;
+
+  &:focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 4px;
+    border-radius: 12px;
+  }
+}
+
+// Boutons ronds posés sur les bords de la rangée
+.carousel__button {
+  position: absolute;
+  top: 45%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;    // 44 px : taille minimale d'une cible tactile confortable
+  height: 2.75rem;
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: 50%;
+  background-color: #ffffff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+  color: #111827;
+  font-size: 1.25rem;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &:focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 2px;
+  }
+}
+
+// Boutons posés SUR le bord des cartes, à l'intérieur du carrousel :
+// une position négative (en dehors) faisait déborder la page, d'où une 2e barre de défilement en bas
+.carousel__button--prev {
+  left: 0.5rem;
+}
+
+.carousel__button--next {
+  right: 0.5rem;
+}

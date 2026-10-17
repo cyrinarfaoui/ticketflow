@@ -4,10 +4,11 @@ import { AuthService } from './core/services/auth.service';
 import { ReservationStore } from './core/stores/reservation.store';
 import { LiveNotificationStore } from './core/stores/live-notification.store';
 import { LiveNotifications } from './shared/live-notifications/live-notifications';
+import { DialogHost } from './shared/dialog/dialog-host';
 import { NotificationBanner } from './shared/notification-banner/notification-banner';
 
 @Component({
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationBanner, LiveNotifications],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationBanner, LiveNotifications, DialogHost],
   selector: 'app-root',
   styleUrl: './app.scss',
   templateUrl: './app.html',
@@ -28,5 +29,11 @@ export class App {
       const loggedIn = this.authService.isLoggedIn();
       untracked(() => (loggedIn ? this.reservationStore.load() : this.reservationStore.clear()));
     });
+  }
+
+  // Avec le routeur Angular, un simple href="#contenu" changerait de page : on déplace le focus nous-mêmes
+  protected skipToContent(event: Event): void {
+    event.preventDefault();
+    document.getElementById('contenu')?.focus();
   }
 }

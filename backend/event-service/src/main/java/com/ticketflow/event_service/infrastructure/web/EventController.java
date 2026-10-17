@@ -5,6 +5,10 @@ import com.ticketflow.event_service.application.EventService;
 import com.ticketflow.event_service.domain.EventCategory;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
+import com.ticketflow.event_service.domain.EventStatus;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -60,6 +64,16 @@ public class EventController {
         return EventResponse.from(eventService.bookSeats(id, request.seats()));
     }
 
+    // Back-office : liste paginée et filtrée (10 par page, triée par date). Réservé à l'admin (SecurityConfig).
+    // Le chemin littéral "/admin" passe AVANT "/{id}" : Spring préfère toujours le chemin le plus précis.
+    @GetMapping("/admin")
+    public PageResponse<EventResponse> listForAdmin(
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) EventStatus status,
+            @PageableDefault(size = 10, sort = "date", direction = Sort.Direction.ASC) Pageable pageable) {
+        return PageResponse.from(eventService.listForAdmin(title, status, pageable).map(EventResponse::from));
+    }
+
     @PostMapping("/{id}/close")
     public EventResponse closeEvent(@PathVariable UUID id) {
         return EventResponse.from(eventService.closeEvent(id));
@@ -76,6 +90,19 @@ public class EventController {
     @GetMapping("/{id}/cancellation")
     public ResponseEntity<CancellationJob> cancellationStatus(@PathVariable UUID id) {
         return ResponseEntity.of(cancellationJobs.find(id));   // Optional vide → 404 (aucune annulation lancée)
+    }
+
+    // Même contenu qu'à la création : on réutilise CreateEventRequest (et ses validations @NotBlank, @Positive…)
+    @PutMapping("/{id}")
+    public EventResponse updateEvent(@PathVariable UUID id, @Valid @RequestBody CreateEventRequest request) {
+        return EventResponse.from(eventService.updateEvent(id, request.title(), request.description(),
+                request.location(), request.category(), request.date(), request.totalSeats(), request.priceCents()));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteEvent(@PathVariable UUID id) {
+        eventService.deleteEvent(id);
+        return ResponseEntity.noContent().build();   // 204 : supprimé, rien à renvoyer
     }
 
 }

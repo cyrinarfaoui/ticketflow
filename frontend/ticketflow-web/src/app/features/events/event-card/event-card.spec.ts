@@ -1,3 +1,4 @@
+import { accessibleText } from '../../../../testing/accessible-text';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LOCALE_ID } from '@angular/core';
 import { registerLocaleData } from '@angular/common';
@@ -192,7 +193,7 @@ describe('EventCard', () => {
     });
 
     it('affiche le jour de la semaine et l\'heure', () => {
-      expect(text('.event-time')).toBe('mar. 20:00');
+      expect(accessibleText(element.querySelector('.event-time'))).toBe('mar. 20:00');
     });
 
     it('donne la date complète aux lecteurs d\'écran', () => {

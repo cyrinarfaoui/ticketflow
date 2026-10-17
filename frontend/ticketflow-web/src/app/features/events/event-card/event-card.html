@@ -11,8 +11,8 @@
     <div>
       <p class="event-category">{{ category() }}</p>
       <h3>{{ e.title }}</h3>
-      <p class="event-location">{{ e.location }}</p>
-      <p class="event-time">{{ e.date | date: 'EEE HH:mm' }}</p>
+      <p class="event-location"><span class="icon" aria-hidden="true">location_on</span> {{ e.location }}</p>
+      <p class="event-time"><span class="icon" aria-hidden="true">schedule</span> {{ e.date | date: 'EEE HH:mm' }}</p>
     </div>
   </header>
   <p class="event-price">{{ price() }} <span class="event-price__unit">/ place</span></p>
@@ -60,7 +60,7 @@
         [attr.aria-describedby]="seatsError() ? 'seats-error-' + e.id : null"
       />
       <button type="button" (click)="onReserve()" [disabled]="seatsError() !== null">
-        Réserver<span class="visually-hidden"> pour {{ total() }}</span>
+        <span class="icon" aria-hidden="true">shopping_cart</span> Réserver<span class="visually-hidden"> pour {{ total() }}</span>
       </button>
       @if (seatsError(); as message) {
         <p class="seats-error" role="alert" [id]="'seats-error-' + e.id">{{ message }}</p>
