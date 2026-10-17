@@ -18,5 +18,6 @@
     <include file="changes/010-add-cancelled-event-status.xml" relativeToChangelogFile="true"/>
     <include file="changes/011-add-user-email-to-reservations.xml" relativeToChangelogFile="true"/>
     <include file="changes/012-index-events-status-date.xml" relativeToChangelogFile="true"/>
+    <include file="changes/013-restore-seats-of-expired-reservations.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

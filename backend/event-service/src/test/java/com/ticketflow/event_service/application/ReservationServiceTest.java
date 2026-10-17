@@ -196,4 +196,41 @@ class ReservationServiceTest {
         verify(reservationRepository, never()).save(any());
         verifyNoInteractions(eventRepository);
     }
+
+    // ---------- Expiration (batch) : le client n'a pas payé à temps ----------
+
+    @Test
+    void expirer_une_reservation_rend_ses_places_a_l_evenement() {
+        // ARRANGE (préparer) : un concert de 100 places, dont 2 bloquées par une réservation en attente
+        Event concert = event("Concert");
+        concert.book(2);
+        Reservation reservation = new Reservation(UUID.randomUUID(), concert.getId(), "user-1", 2);
+        when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
+        when(eventRepository.findByIdForUpdate(concert.getId())).thenReturn(Optional.of(concert));
+
+        // ACT (agir) : le batch fait expirer la réservation
+        service.expireReservation(reservation.getId());
+
+        // ASSERT (vérifier) : expirée ET les places rendues
+        assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.EXPIRED);
+        assertThat(concert.getAvailableSeats()).isEqualTo(100);
+        verify(reservationRepository).save(reservation);
+        verify(eventRepository).save(concert);
+    }
+
+    @Test
+    void une_reservation_payee_entre_temps_n_expire_pas() {
+        // ARRANGE : la banque a répondu juste avant le batch, la réservation est déjà confirmée
+        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), "user-1", 2);
+        reservation.confirm();
+        when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
+
+        // ACT
+        service.expireReservation(reservation.getId());
+
+        // ASSERT : rien n'a changé, rien n'est enregistré, l'événement n'est même pas lu
+        assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
+        verify(reservationRepository, never()).save(any());
+        verifyNoInteractions(eventRepository);
+    }
 }

@@ -107,6 +107,31 @@ public class ReservationService {
     }
 
     /**
+     * Expiration (batch) : le client n'a pas reçu de réponse de paiement dans le délai.
+     * Comme une compensation : la réservation expire ET ses places sont rendues à l'événement.
+     */
+    @Transactional
+    public void expireReservation(UUID reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new NoSuchElementException("Réservation introuvable : " + reservationId));
+
+        // Payée ou annulée entre la lecture du batch et maintenant : on ne touche à rien
+        if (!reservation.isPending()) {
+            log.info("Réservation {} déjà {} : pas d'expiration", reservationId, reservation.getStatus());
+            return;
+        }
+
+        reservation.expire();
+        reservationRepository.save(reservation);
+
+        // Verrou : on modifie l'événement, comme une réservation ou une compensation
+        Event event = eventRepository.findByIdForUpdate(reservation.getEventId())
+                .orElseThrow(() -> new NoSuchElementException("Événement introuvable : " + reservation.getEventId()));
+        event.release(reservation.getSeats());
+        eventRepository.save(event);
+    }
+
+    /**
      * Annule une réservation.
      * Seul son propriétaire peut le faire, ou un administrateur (dashboard).
      * La vérification est faite ICI, côté serveur : cacher le bouton dans le frontend ne protège rien.

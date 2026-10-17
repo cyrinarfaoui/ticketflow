@@ -60,5 +60,35 @@ Un processus séparé (poller planifié, ou Debezium qui lit le journal de Postg
 de `outbox` vers Kafka et les marque envoyées. Base et message deviennent atomiques ; la livraison reste
 *at-least-once*, d'où l'importance de l'idempotence côté consommateurs (déjà en place).
 
-Filet de sécurité complémentaire : l'expiration des réservations `PENDING` trop anciennes (déjà présente)
-libère les places si un message se perd.
+Filet de sécurité complémentaire : l'expiration des réservations `PENDING` trop anciennes
+libère les places si un message se perd (voir ci-dessous).
+
+## Expiration des réservations sans réponse de paiement
+
+Une réservation reste `PENDING` une ou deux secondes : le temps de l'aller-retour Kafka.
+Si la réponse n'arrive jamais (payment-service en panne, message perdu), un batch Spring planifié
+(toutes les 5 min) fait expirer les réservations `PENDING` de plus de 5 minutes :
+
+```
+Reader  : réservations PENDING créées avant (maintenant - 5 min)
+Writer  : ReservationService.expireReservation(id), pour chacune, par paquets de 20 (une transaction par paquet)
+          → réservation EXPIRED + places rendues à l'événement (verrou SELECT … FOR UPDATE)
+```
+
+- **Même règle que la compensation** : expirer, c'est défaire l'étape 1 de la saga, donc rendre les places.
+  (Bug corrigé : la première version expirait la réservation sans rendre les places ; la migration Liquibase
+  `013` a recalculé les places des événements touchés.)
+- **Course avec la banque** : si la réponse arrive entre la lecture du batch et le traitement, la réservation
+  n'est plus `PENDING` → `expireReservation` ne fait rien (idempotence), sans faire échouer le paquet.
+
+### Limite connue : paiement accepté APRÈS l'expiration
+
+Si payment-service débite le client puis que sa réponse arrive après l'expiration, `confirmPayment` trouve
+une réservation `EXPIRED` et ne fait rien : **le client a payé mais n'a pas de place** (elles ont pu être revendues).
+
+Ce qu'il faut faire (non implémenté) : déclencher un **remboursement automatique**. event-service publierait
+`reservation.expired` ; payment-service, s'il trouve un paiement `SUCCEEDED` pour cette réservation, appellerait
+le remboursement du prestataire (`refunds` chez Stripe) et passerait le paiement à `REFUNDED`, en restant
+idempotent (un seul remboursement par paiement). Le client serait prévenu par e-mail.
+En attendant, ce cas est rare (il faut une panne de plus de 5 minutes) et se repère dans les logs d'event-service
+(« Paiement confirmé pour la réservation … déjà EXPIRED »).
