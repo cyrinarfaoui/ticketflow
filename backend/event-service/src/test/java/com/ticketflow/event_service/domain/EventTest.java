@@ -208,4 +208,40 @@ public class EventTest {
                 EventCategory.CONCERT, LocalDateTime.now().plusDays(30), 50, 0))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    // ---------- Annulation (ticket #17) ----------
+
+    @Test
+    void annuler_un_evenement_le_passe_a_cancelled() {
+        Event event = newEvent();
+
+        event.cancel();
+
+        assertThat(event.getStatus()).isEqualTo(EventStatus.CANCELLED);
+    }
+
+    @Test
+    void on_ne_peut_plus_reserver_un_evenement_annule() {
+        Event event = newEvent();
+        event.cancel();
+
+        assertThatThrownBy(() -> event.book(1)).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void on_ne_peut_pas_annuler_deux_fois() {
+        Event event = newEvent();
+        event.cancel();
+
+        assertThatThrownBy(event::cancel).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void un_evenement_cloture_peut_etre_annule_mais_pas_l_inverse() {
+        Event event = newEvent();
+        event.close();
+        event.cancel();                                                              // clôturé → annulé : autorisé
+
+        assertThatThrownBy(event::close).isInstanceOf(IllegalStateException.class);  // annulé → clôturé : interdit
+    }
 }

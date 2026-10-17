@@ -17,6 +17,8 @@ public class Reservation {
     private ReservationStatus status;
     // Code Stripe du refus de paiement (insufficient_funds…), si la réservation a été annulée pour cette raison
     private String paymentFailureCode;
+    // E-mail de contact du client (claim "email" du jeton Keycloak), pour le prévenir ; null pour les réservations d'avant le ticket #17
+    private String userEmail;
 
     // Nouvelle réservation : faite maintenant, par un utilisateur identifié (obligatoire)
     public Reservation(UUID id, UUID eventId, String userId, int seats) {
@@ -34,6 +36,10 @@ public class Reservation {
         this.seats = seats;
         this.createdAt = createdAt;
         this.status = ReservationStatus.PENDING;
+    }
+
+    public void setContactEmail(String email) {
+        this.userEmail = email;
     }
 
     public boolean isOwnedBy(String userId) {

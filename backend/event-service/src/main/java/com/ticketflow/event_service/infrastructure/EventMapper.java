@@ -39,6 +39,9 @@ public class EventMapper {
         if (entity.getStatus() == EventStatus.CLOSED) {
             event.close();
         }
+        if (entity.getStatus() == EventStatus.CANCELLED) {
+            event.cancel();
+        }
         return event;
     }
 

@@ -30,9 +30,11 @@ public class SecurityConfig {
                 // Donc les plus précises en haut, les plus générales en bas.
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Le bilan d'une annulation : admin seulement (AVANT la règle publique GET /events/**)
+                        .requestMatchers(HttpMethod.GET, "/events/*/cancellation").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/events/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/events").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/events/*/book", "/events/*/close").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/events/*/book", "/events/*/close", "/events/*/cancel").hasRole("ADMIN")
                         // Lister toutes les réservations et les statistiques : réservé à l'admin (dashboard)
                         .requestMatchers(HttpMethod.GET, "/reservations", "/reservations/stats").hasRole("ADMIN")
                         // Réserver / annuler : tout utilisateur connecté

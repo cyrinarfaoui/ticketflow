@@ -4,6 +4,9 @@
   @if (actionError()) {
     <p class="error" role="alert">{{ actionError() }}</p>
   }
+  @if (actionMessage()) {
+    <p class="success" role="status">{{ actionMessage() }}</p>
+  }
 
   <!-- ========== Indicateurs ========== -->
   <section aria-labelledby="stats-title">
@@ -143,12 +146,17 @@
               <td>{{ event.date | date: 'dd/MM/yyyy HH:mm' }}</td>
               <td>{{ event.availableSeats }} / {{ event.totalSeats }}</td>
               <td>
-                <span class="badge" [attr.data-status]="event.status">{{ event.status === 'CLOSED' ? 'Clôturées' : 'Ouvertes' }}</span>
+                <span class="badge" [attr.data-status]="event.status">{{ event.status === 'CANCELLED' ? 'Annulé' : event.status === 'CLOSED' ? 'Clôturées' : 'Ouvertes' }}</span>
               </td>
               <td>
                 @if (event.status === 'OPEN') {
                   <button type="button" class="action-button" (click)="close(event)">
                     Clôturer<span class="visually-hidden"> les réservations de {{ event.title }}</span>
+                  </button>
+                }
+                @if (event.status !== 'CANCELLED') {
+                  <button type="button" class="action-button action-button--danger" (click)="cancelEvent(event)">
+                    Annuler l'événement<span class="visually-hidden"> {{ event.title }}</span>
                   </button>
                 }
               </td>

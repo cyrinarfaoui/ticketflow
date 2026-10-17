@@ -20,6 +20,7 @@ function reservation(overrides: Partial<MyReservation> = {}): MyReservation {
     status: 'PENDING',
     createdAt: '2026-10-04T08:30:00Z',
     paymentFailureCode: null,
+    eventCancelled: false,
     ...overrides,
   };
 }
@@ -113,6 +114,12 @@ describe('MyReservations (intégration)', () => {
     await respond([reservation({ status: 'CANCELLED', paymentFailureCode: 'insufficient_funds' })]);
 
     expect(items()[0].querySelector('.payment-failure')?.textContent).toContain('Paiement refusé : fonds insuffisants');
+  });
+
+  it("affiche que l'événement a été annulé par l'organisateur", async () => {
+    await respond([reservation({ status: 'CANCELLED', eventCancelled: true })]);
+
+    expect(items()[0].querySelector('.payment-failure')?.textContent).toContain("Événement annulé par l'organisateur");
   });
 
   it('affiche un état vide avec un lien vers le catalogue', async () => {

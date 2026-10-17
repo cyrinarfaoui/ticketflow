@@ -141,9 +141,10 @@ class ReservationServiceTest {
         when(eventRepository.findByIdForUpdate(concert.getId())).thenReturn(Optional.of(concert));
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Reservation reservation = service.createReservation(concert.getId(), "user-1", 3, "pm_card_visa");
+        Reservation reservation = service.createReservation(concert.getId(), "user-1", "user1@mail.test", 3, "pm_card_visa");
 
         verify(eventPublisher).publishCreated(reservation, 15_000L, "pm_card_visa");
+        assertThat(reservation.getUserEmail()).isEqualTo("user1@mail.test");   // gardé pour prévenir le client
     }
 
     @Test

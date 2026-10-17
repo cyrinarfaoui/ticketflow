@@ -71,6 +71,7 @@ services:
     build: ../backend/event-service
     container_name: ticketflow-event-service
     depends_on:
+      - mailpit
       - postgres-event-service
       - keycloak
       - kafka
@@ -82,10 +83,20 @@ services:
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/ticketflow/protocol/openid-connect/certs
       APP_CORS_ALLOWED_ORIGIN: http://localhost:4200
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      MAIL_HOST: mailpit        # e-mails d'annulation (ticket #17)
+      MAIL_PORT: 1025
     extra_hosts:
       - "localhost:host-gateway"
     ports:
       - "8080:8080"
+
+  # Faux serveur e-mail : reçoit les e-mails (SMTP 1025) et les affiche sur http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:v1.21
+    container_name: ticketflow-mailpit
+    ports:
+      - "8025:8025"   # interface web
+      - "1025:1025"   # SMTP
 
   auth-service:
     build: ../backend/auth-service

@@ -3,6 +3,7 @@ import { DatePipe, PercentPipe } from '@angular/common';
 import { HttpErrorResponse, httpResource } from '@angular/common/http';
 import { ActivatedRoute, ParamMap, Params, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { exhaustMap, interval, startWith, switchMap, takeWhile } from 'rxjs';
 import { API_BASE_URL } from '../../../core/config/api.config';
 import { AdminService } from '../../../core/services/admin.service';
 import { EventResponse } from '../../../core/services/event.service';
@@ -70,6 +71,7 @@ export class AdminDashboard {
 
   // Message d'une erreur métier (409…) ; les erreurs techniques sont affichées par la bannière globale
   readonly actionError = signal<string | null>(null);
+  readonly actionMessage = signal<string | null>(null);
 
   eventTitle(eventId: string): string {
     return this.eventTitles().get(eventId) ?? 'Événement passé';
@@ -131,6 +133,45 @@ export class AdminDashboard {
     this.adminService.closeEvent(event.id).subscribe({
       next: () => this.events.reload(),
       error: (err: HttpErrorResponse) => this.actionError.set(err.error?.error ?? null),
+    });
+  }
+
+  cancelEvent(event: EventResponse): void {
+    if (!confirm(`Annuler « ${event.title} » ? L'événement n'aura pas lieu : toutes les réservations seront annulées et chaque client prévenu par e-mail.`)) {
+      return;
+    }
+    this.actionError.set(null);
+    this.actionMessage.set(`Annulation de « ${event.title} » en cours…`);
+
+    this.adminService.cancelEvent(event.id).pipe(
+      // 202 reçu : on interroge le suivi tout de suite, puis toutes les secondes
+      switchMap(() => interval(1000).pipe(
+        startWith(0),
+        exhaustMap(() => this.adminService.cancellationStatus(event.id)),
+        takeWhile((job) => job.status === 'RUNNING', true),   // true : on garde aussi l'état final (DONE / FAILED)
+      )),
+    ).subscribe({
+      next: (job) => {
+        if (job.status === 'DONE' && job.report) {
+          const r = job.report;
+          this.actionMessage.set(
+            `« ${event.title} » annulé : ${r.cancelledReservations} réservation(s) annulée(s), ` +
+            `${r.notified} client(s) prévenu(s) par e-mail` +
+            (r.failed > 0 ? `, ${r.failed} échec(s)` : '') +
+            (r.withoutEmail > 0 ? `, ${r.withoutEmail} sans e-mail` : '') + '.',
+          );
+          this.events.reload();
+          this.reservations.reload();
+          this.stats.reload();
+        } else if (job.status === 'FAILED') {
+          this.actionMessage.set(null);
+          this.actionError.set(job.error);
+        }
+      },
+      error: (err: HttpErrorResponse) => {
+        this.actionMessage.set(null);
+        this.actionError.set(err.error?.error ?? null);
+      },
     });
   }
 

@@ -27,6 +27,10 @@
   </div>
 
   @switch (status()) {
+
+    @case ('cancelled') {
+      <p class="seats-label seats-label--closed">Événement annulé</p>
+    }
     @case ('closed') {
       <p class="seats-label seats-label--closed">Réservations clôturées</p>
     }
@@ -41,7 +45,7 @@
     }
   }
 
-   @if (bookable() && status() !== 'full' && status() !== 'closed') {
+      @if (bookable() && status() !== 'full' && status() !== 'closed' && status() !== 'cancelled') {
     <div class="reserve-row">
       <label [for]="'seats-' + e.id">Places</label>
       <input
@@ -52,11 +56,17 @@
         [max]="e.availableSeats"
         [value]="seats()"
         (input)="onSeatsChange(seatsInput.value)"
+        [attr.aria-invalid]="seatsError() ? true : null"
+        [attr.aria-describedby]="seatsError() ? 'seats-error-' + e.id : null"
       />
-      <button type="button" (click)="onReserve()">
+      <button type="button" (click)="onReserve()" [disabled]="seatsError() !== null">
         Réserver<span class="visually-hidden"> pour {{ total() }}</span>
       </button>
-      <p class="reserve-total" aria-hidden="true">Total : {{ total() }}</p>
+      @if (seatsError(); as message) {
+        <p class="seats-error" role="alert" [id]="'seats-error-' + e.id">{{ message }}</p>
+      } @else {
+        <p class="reserve-total" aria-hidden="true">Total : {{ total() }}</p>
+      }
     </div>
   }
 </article>

@@ -41,7 +41,9 @@
                 <p class="status" [attr.data-status]="reservation.status">
                   <span aria-hidden="true">{{ status.icon }}</span> {{ status.label }}
                 </p>
-                @if (reservation.paymentFailureCode) {
+                @if (reservation.eventCancelled) {
+                  <p class="payment-failure">Événement annulé par l'organisateur</p>
+                } @else if (reservation.paymentFailureCode) {
                   <p class="payment-failure">{{ declineLabel(reservation.paymentFailureCode) }}</p>
                 }
                 @if (canCancel(reservation)) {

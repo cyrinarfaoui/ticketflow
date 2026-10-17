@@ -10,7 +10,7 @@ const ME_URL = `${API_BASE_URL}/reservations/me`;
 function reservation(id: string, status: MyReservation['status']): MyReservation {
   return {
     id, eventId: 'e1', eventTitle: 'Concert', eventLocation: 'Tunis',
-    eventDate: '2026-12-15T20:00:00', seats: 1, status, createdAt: '2026-10-04T08:00:00Z', paymentFailureCode: null,
+    eventDate: '2026-12-15T20:00:00', seats: 1, status, createdAt: '2026-10-04T08:00:00Z', paymentFailureCode: null, eventCancelled: false,
   };
 }
 

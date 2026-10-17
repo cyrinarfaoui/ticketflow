@@ -50,7 +50,7 @@ public class ReservationService {
      * paymentMethod est un JETON de moyen de paiement (pm_…), jamais un numéro de carte.
      */
     @Transactional
-    public Reservation createReservation(UUID eventId, String userId, int seats, String paymentMethod) {
+    public Reservation createReservation(UUID eventId, String userId, String userEmail, int seats, String paymentMethod) {
         // Verrou sur la ligne de l'événement : les réservations simultanées passent une par une
         Event event = eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new NoSuchElementException("Événement introuvable : " + eventId));
@@ -59,6 +59,7 @@ public class ReservationService {
         eventRepository.save(event);
 
         Reservation reservation = new Reservation(UUID.randomUUID(), eventId, userId, seats);
+        reservation.setContactEmail(userEmail);   // pour pouvoir prévenir le client (annulation de l'événement)
         Reservation saved = reservationRepository.save(reservation);
 
         eventPublisher.publishCreated(saved, event.priceFor(seats), paymentMethod);

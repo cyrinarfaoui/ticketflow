@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -15,6 +16,8 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
     List<ReservationEntity> findByStatusAndCreatedAtBefore(ReservationStatus status, Instant cutoff);
 
     Page<ReservationEntity> findByStatus(ReservationStatus status, Pageable pageable);
+
+    List<ReservationEntity> findByEventIdAndStatusIn(UUID eventId, Collection<ReservationStatus> statuses);
 
     long countByCreatedAtGreaterThanEqual(Instant since);
 
