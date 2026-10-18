@@ -1,0 +1,58 @@
+# Grafana : mêmes fichiers que pour Docker Compose (source de données + tableau de bord TicketFlow),
+# fournis par 3 ConfigMaps créées par deploy.sh depuis infra/grafana/.
+# Premier accès : admin / admin, Grafana demande aussitôt un nouveau mot de passe.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: ticketflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:12.1.0
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            httpGet: { path: /api/health, port: 3000 }
+            periodSeconds: 10
+          resources:
+            requests: { memory: 128Mi, cpu: 50m }
+            limits: { memory: 256Mi }
+          volumeMounts:
+            - name: datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: dashboard-providers
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: dashboards
+              mountPath: /etc/grafana/dashboards
+      volumes:
+        - name: datasources
+          configMap:
+            name: grafana-datasources
+        - name: dashboard-providers
+          configMap:
+            name: grafana-dashboard-providers
+        - name: dashboards
+          configMap:
+            name: grafana-dashboards
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: ticketflow
+spec:
+  type: LoadBalancer        # http://localhost:3000
+  selector:
+    app: grafana
+  ports:
+    - port: 3000

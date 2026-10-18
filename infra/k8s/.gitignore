@@ -1,0 +1,2 @@
+# Export du realm Keycloak : mots de passe hachés et secrets des clients, jamais dans Git
+keycloak/

@@ -29,6 +29,7 @@ metadata:
   name: mailpit                  # le nom DNS dans le cluster : event-service enverra ses e-mails à "mailpit:1025"
   namespace: ticketflow
 spec:
+  type: LoadBalancer             # interface web publiée sur http://localhost:8025 (comme avec Docker Compose)
   selector:
     app: mailpit                 # vers quels Pods envoyer le trafic : ceux qui portent cette étiquette
   ports:

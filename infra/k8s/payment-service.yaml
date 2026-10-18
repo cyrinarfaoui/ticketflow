@@ -1,0 +1,66 @@
+# payment-service : même modèle qu'event-service.yaml (voir ses commentaires)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payment-service-config
+  namespace: ticketflow
+data:
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-payment-service:5432/paymentdb
+  SPRING_DATASOURCE_USERNAME: ticketflow
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+  JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: ticketflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      containers:
+        - name: payment-service
+          image: infra-payment-service:latest
+          imagePullPolicy: Never
+          envFrom:
+            - configMapRef:
+                name: payment-service-config
+          env:
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+          ports:
+            - containerPort: 8084
+          startupProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8084 }
+            periodSeconds: 5
+            failureThreshold: 36
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8084 }
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8084 }
+            periodSeconds: 5
+          resources:
+            requests: { memory: 320Mi, cpu: 100m }
+            limits: { memory: 640Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: ticketflow
+spec:
+  selector:
+    app: payment-service
+  ports:
+    - port: 8084

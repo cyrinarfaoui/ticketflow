@@ -1,0 +1,42 @@
+# Frontend Angular : image de PRODUCTION (compilée, servie par nginx), publiée sur http://localhost:4200.
+# L'image se construit avec : docker build -t ticketflow-web:prod frontend/ticketflow-web
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ticketflow-web
+  namespace: ticketflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ticketflow-web
+  template:
+    metadata:
+      labels:
+        app: ticketflow-web
+    spec:
+      containers:
+        - name: ticketflow-web
+          image: ticketflow-web:prod
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet: { path: /, port: 80 }
+            periodSeconds: 10
+          resources:
+            requests: { memory: 16Mi, cpu: 10m }
+            limits: { memory: 64Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ticketflow-web
+  namespace: ticketflow
+spec:
+  type: LoadBalancer
+  selector:
+    app: ticketflow-web
+  ports:
+    - port: 4200          # l'adresse vue par le navigateur (inchangée : Keycloak et le CORS l'attendent)
+      targetPort: 80      # nginx dans le conteneur
