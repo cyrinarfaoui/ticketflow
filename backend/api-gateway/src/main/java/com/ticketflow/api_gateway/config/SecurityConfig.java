@@ -29,7 +29,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())                  // utilise le bean corsConfigurationSource ci-dessous
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()          // pré-requêtes CORS du navigateur
-                        .pathMatchers("/actuator/health/**").permitAll()              // sondes Docker / Kubernetes
+                        .pathMatchers("/actuator/health/**", "/actuator/prometheus").permitAll()   // sondes + Prometheus
                         .pathMatchers(HttpMethod.GET, "/api/events/**").permitAll()   // catalogue public
                         // Flux public : aucune donnée personnelle, et EventSource ne sait pas envoyer de jeton
                         .pathMatchers(HttpMethod.GET, "/api/notifications/stream").permitAll()

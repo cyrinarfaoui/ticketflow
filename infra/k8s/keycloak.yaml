@@ -1,0 +1,76 @@
+# Keycloak : au démarrage, il importe le realm "ticketflow" (clients, rôles, utilisateurs)
+# depuis l'export, fourni par le Secret "keycloak-realm".
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: ticketflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:26.0
+          args: ["start-dev", "--import-realm"]   # importe les fichiers du dossier data/import au démarrage
+          env:
+            - name: KC_BOOTSTRAP_ADMIN_USERNAME
+              value: admin
+            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-admin
+                  key: password
+            - name: KC_HEALTH_ENABLED             # active les sondes /health/ready et /health/live
+              value: "true"
+          ports:
+            - containerPort: 8080                 # l'application Keycloak
+            - containerPort: 9000                 # le port de gestion (santé)
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 9000
+            periodSeconds: 10
+          resources:
+            requests: { memory: 512Mi, cpu: 100m }
+            limits: { memory: 1Gi }
+          volumeMounts:
+            - name: realm
+              mountPath: /opt/keycloak/data/import   # là où Keycloak cherche les realms à importer
+              readOnly: true
+      volumes:
+        - name: realm
+          secret:
+            secretName: keycloak-realm            # le Secret devient un FICHIER dans le conteneur
+---
+# Adresse INTERNE : les microservices y lisent les clés publiques (JWKS) pour vérifier les jetons
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  namespace: ticketflow
+spec:
+  selector:
+    app: keycloak
+  ports:
+    - port: 8080
+---
+# Adresse PUBLIQUE pour le navigateur : http://localhost:8081, comme avec Docker Compose
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak-public
+  namespace: ticketflow
+spec:
+  type: LoadBalancer        # Docker Desktop publie les Services LoadBalancer sur localhost
+  selector:
+    app: keycloak
+  ports:
+    - port: 8081            # le port vu par ton navigateur
+      targetPort: 8080      # le port dans le conteneur

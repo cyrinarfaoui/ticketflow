@@ -1,0 +1,59 @@
+# auth-service : même modèle qu'event-service.yaml (voir ses commentaires)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-service-config
+  namespace: ticketflow
+data:
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8081/realms/ticketflow
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/ticketflow/protocol/openid-connect/certs
+  JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: ticketflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: infra-auth-service:latest
+          imagePullPolicy: Never
+          envFrom:
+            - configMapRef:
+                name: auth-service-config
+          ports:
+            - containerPort: 8082
+          startupProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8082 }
+            periodSeconds: 5
+            failureThreshold: 36
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8082 }
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8082 }
+            periodSeconds: 5
+          resources:
+            requests: { memory: 256Mi, cpu: 50m }
+            limits: { memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: ticketflow
+spec:
+  selector:
+    app: auth-service
+  ports:
+    - port: 8082

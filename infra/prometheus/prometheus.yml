@@ -1,0 +1,29 @@
+# Configuration de Prometheus : QUOI surveiller et À QUELLE FRÉQUENCE
+global:
+  scrape_interval: 15s        # toutes les 15 s, Prometheus va lire les mesures de chaque cible
+
+scrape_configs:
+  - job_name: event-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      # "event-service" = le nom du service dans docker-compose : Docker le traduit en adresse IP
+      - targets: ["event-service:8080"]
+  - job_name: api-gateway
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["api-gateway:8000"]
+
+  - job_name: auth-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["auth-service:8082"]
+
+  - job_name: notification-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["notification-service:8083"]
+
+  - job_name: payment-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["payment-service:8084"]

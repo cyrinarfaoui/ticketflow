@@ -1,0 +1,6 @@
+# Un espace de noms dédié : toute l'application TicketFlow y sera rangée,
+# séparée du reste du cluster (et supprimable d'un coup)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ticketflow

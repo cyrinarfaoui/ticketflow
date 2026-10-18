@@ -30,6 +30,8 @@ public class SecurityConfig {
                 // Donc les plus précises en haut, les plus générales en bas.
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Sondes de santé (Docker / Kubernetes) et mesures lues par Prometheus
+                        .requestMatchers(HttpMethod.GET, "/actuator/health/**", "/actuator/prometheus").permitAll()
                         // Le bilan d'une annulation : admin seulement (AVANT la règle publique GET /events/**)
                         .requestMatchers(HttpMethod.GET, "/events/*/cancellation", "/events/admin").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/events/**").permitAll()

@@ -1,0 +1,62 @@
+# PostgreSQL de payment-service.
+# StatefulSet (et pas Deployment) : un Pod avec une identité stable et SON disque,
+# conservé même si le Pod est supprimé et recréé.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-payment-service
+  namespace: ticketflow
+spec:
+  serviceName: postgres-payment-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-payment-service
+  template:
+    metadata:
+      labels:
+        app: postgres-payment-service
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          env:
+            - name: POSTGRES_DB
+              value: paymentdb
+            - name: POSTGRES_USER
+              value: ticketflow
+            - name: POSTGRES_PASSWORD          # lu dans le Secret, jamais écrit ici
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+            - name: PGDATA                     # sous-dossier : le disque monté contient déjà "lost+found"
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+          readinessProbe:                      # « prête » seulement quand elle accepte les connexions
+            exec:
+              command: ["pg_isready", "-U", "ticketflow", "-d", "paymentdb"]
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:                        # demande au cluster un disque persistant de 1 Go
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-payment-service                 # payment-service se connectera à "postgres-payment-service:5432"
+  namespace: ticketflow
+spec:
+  selector:
+    app: postgres-payment-service
+  ports:
+    - port: 5432
