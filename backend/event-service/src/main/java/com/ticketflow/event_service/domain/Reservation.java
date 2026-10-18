@@ -3,7 +3,9 @@ package com.ticketflow.event_service.domain;
 import lombok.Getter;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
 @Getter
 public class Reservation {
@@ -74,6 +76,21 @@ public class Reservation {
 
     public boolean isPending() {
         return status == ReservationStatus.PENDING;
+    }
+
+    /**
+     * Un code de billet par place, imprimé en QR code : "TICKETFLOW-<id de la réservation>-<n° de place>".
+     * L'id est un UUID aléatoire, impossible à deviner : au contrôle, on retrouve la réservation et la place.
+     */
+    public List<String> ticketCodes() {
+        return IntStream.rangeClosed(1, seats)
+                .mapToObj(place -> "TICKETFLOW-" + id + "-" + place)
+                .toList();
+    }
+
+    // Confirmée = payée : si elle est annulée, le client doit être remboursé
+    public boolean isConfirmed() {
+        return status == ReservationStatus.CONFIRMED;
     }
 
     public void expire() {

@@ -7,5 +7,6 @@
 
     <!-- Un fichier par évolution, préfixe numérique, jamais modifié une fois déployé -->
     <include file="changes/001-create-payments-table.xml" relativeToChangelogFile="true"/>
+    <include file="changes/002-add-refunded-status.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

@@ -2,6 +2,7 @@ package com.ticketflow.event_service.application;
 
 import com.ticketflow.event_service.application.port.out.ClientNotifier;
 import com.ticketflow.event_service.application.port.out.EventRepository;
+import com.ticketflow.event_service.application.port.out.ReservationEventPublisher;
 import com.ticketflow.event_service.application.port.out.ReservationRepository;
 import com.ticketflow.event_service.domain.CancellationNotice;
 import com.ticketflow.event_service.domain.CancellationReport;
@@ -37,13 +38,16 @@ public class EventCancellationService {
 
     private final EventRepository eventRepository;
     private final ReservationRepository reservationRepository;
+    private final ReservationEventPublisher eventPublisher;
     private final ClientNotifier clientNotifier;
     private final TransactionOperations transaction;   // TransactionTemplate de Spring (transaction "à la main", bornée)
 
     public EventCancellationService(EventRepository eventRepository, ReservationRepository reservationRepository,
-                                    ClientNotifier clientNotifier, TransactionOperations transaction) {
+                                    ReservationEventPublisher eventPublisher, ClientNotifier clientNotifier,
+                                    TransactionOperations transaction) {
         this.eventRepository = eventRepository;
         this.reservationRepository = reservationRepository;
+        this.eventPublisher = eventPublisher;
         this.clientNotifier = clientNotifier;
         this.transaction = transaction;
     }
@@ -62,7 +66,12 @@ public class EventCancellationService {
 
             List<Reservation> reservations = reservationRepository.findActiveByEventId(eventId);
             for (Reservation reservation : reservations) {
+                boolean paid = reservation.isConfirmed();
                 reservation.cancel();
+                if (paid) {
+                    // Déjà payée : remboursement demandé dans la MÊME transaction (outbox)
+                    eventPublisher.publishRefundRequested(reservation);
+                }
                 if (reservation.getUserEmail() == null) {
                     withoutEmail[0]++;   // ancienne réservation, sans e-mail : on ne peut pas prévenir ce client
                 } else {

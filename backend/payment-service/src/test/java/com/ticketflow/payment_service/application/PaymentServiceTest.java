@@ -112,4 +112,62 @@ class PaymentServiceTest {
         verify(repository, never()).save(any());       // pas de second enregistrement
         verify(publisher).publish(alreadyDone);        // mais la saga peut repartir
     }
+
+    // ---------- Remboursement (refund.requested) ----------
+
+    private Payment payment(UUID reservationId, PaymentResult result) {
+        return new Payment(UUID.randomUUID(), reservationId, new Money(17_500, "TND"), "pm_card_visa", result, NOW);
+    }
+
+    @Test
+    void rembourse_un_paiement_accepte() {
+        UUID reservationId = UUID.randomUUID();
+        Payment paid = payment(reservationId, PaymentResult.succeeded());
+        when(repository.findByReservationId(reservationId)).thenReturn(Optional.of(paid));
+        saveReturnsItsArgument();
+
+        Payment refunded = service.refund(reservationId);
+
+        assertThat(refunded.result().status()).isEqualTo(PaymentStatus.REFUNDED);
+        // D'ABORD enregistré, PUIS remboursé : si l'enregistrement échoue, on n'a pas rendu l'argent
+        // (sinon chaque nouvel essai de Kafka rembourserait encore)
+        InOrder order = inOrder(repository, provider, publisher);
+        order.verify(repository).save(refunded);
+        order.verify(provider).refund(paid);
+        order.verify(publisher).publishRefunded(refunded);   // event-service préviendra le client par e-mail
+    }
+
+    @Test
+    void ne_rembourse_jamais_deux_fois() {
+        // Message refund.requested livré une 2e fois (Kafka : at-least-once)
+        UUID reservationId = UUID.randomUUID();
+        when(repository.findByReservationId(reservationId))
+                .thenReturn(Optional.of(payment(reservationId, PaymentResult.refunded())));
+
+        service.refund(reservationId);
+
+        verify(provider, never()).refund(any());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void rien_a_rembourser_si_le_paiement_a_ete_refuse() {
+        UUID reservationId = UUID.randomUUID();
+        when(repository.findByReservationId(reservationId))
+                .thenReturn(Optional.of(payment(reservationId, PaymentResult.declined(DeclineCode.CARD_DECLINED))));
+
+        service.refund(reservationId);
+
+        verify(provider, never()).refund(any());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void rien_a_rembourser_si_aucun_paiement() {
+        UUID reservationId = UUID.randomUUID();
+        when(repository.findByReservationId(reservationId)).thenReturn(Optional.empty());
+
+        assertThat(service.refund(reservationId)).isNull();
+        verifyNoInteractions(provider);
+    }
 }

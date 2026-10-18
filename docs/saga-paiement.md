@@ -48,17 +48,35 @@ Sans protection, on débiterait deux fois ou on rendrait les places deux fois.
 
 Vérifié de bout en bout : un rejeu des mêmes messages laisse les places et le nombre de paiements inchangés.
 
-## Limite connue : le pattern Outbox (à étudier / implémenter)
+## Publication fiable : le pattern Outbox
 
-Aujourd'hui, on publie sur Kafka **dans** la transaction, avant le commit SQL. Deux pannes possibles :
+**Le problème (« dual write »)** : la réservation va dans PostgreSQL, le message dans Kafka. Aucune transaction
+ne couvre les deux systèmes. Publier directement sur Kafka laissait deux pannes possibles :
 
 1. Kafka reçoit le message, puis le commit SQL échoue → message "fantôme" (paiement d'une réservation qui n'existe pas).
 2. Le commit réussit, puis l'envoi Kafka échoue → la saga reste bloquée en `PENDING`.
 
-**Outbox** : dans la MÊME transaction que la réservation, on insère le message dans une table `outbox`.
-Un processus séparé (poller planifié, ou Debezium qui lit le journal de Postgres) publie ensuite les lignes
-de `outbox` vers Kafka et les marque envoyées. Base et message deviennent atomiques ; la livraison reste
-*at-least-once*, d'où l'importance de l'idempotence côté consommateurs (déjà en place).
+**La solution** :
+
+```
+createReservation (@Transactional)
+   INSERT reservations     ─┐  même base, même transaction : tout ou rien
+   INSERT outbox_events    ─┘  (OutboxReservationEventPublisher, propagation MANDATORY)
+
+OutboxRelay (@Scheduled, toutes les secondes)
+   SELECT 100 plus anciens messages WHERE published_at IS NULL
+   pour chacun : send Kafka, ATTENDRE l'accusé de réception, puis published_at = maintenant
+   Kafka en panne → on s'arrête (ordre conservé), nouvel essai 1 s plus tard
+```
+
+- **Atomicité** : réservation et message sont enregistrés ensemble, ou pas du tout.
+- **Aucune perte** : si Kafka est en panne, les messages attendent dans la table et partent à son retour.
+- **Doublons possibles** (*at-least-once*) : un crash entre l'envoi et le marquage renvoie le message.
+  Sans conséquence, les consommateurs sont idempotents (voir ci-dessus).
+- **Limites assumées** : prévu pour une seule instance d'event-service (avec plusieurs, il faudrait
+  `SELECT … FOR UPDATE SKIP LOCKED` pour que deux relais ne prennent pas les mêmes messages) ; les messages
+  envoyés restent dans la table (à purger périodiquement). Alternative sans polling : Debezium, qui lit le
+  journal de PostgreSQL (CDC).
 
 Filet de sécurité complémentaire : l'expiration des réservations `PENDING` trop anciennes
 libère les places si un message se perd (voir ci-dessous).
@@ -81,14 +99,46 @@ Writer  : ReservationService.expireReservation(id), pour chacune, par paquets de
 - **Course avec la banque** : si la réponse arrive entre la lecture du batch et le traitement, la réservation
   n'est plus `PENDING` → `expireReservation` ne fait rien (idempotence), sans faire échouer le paquet.
 
-### Limite connue : paiement accepté APRÈS l'expiration
+## Remboursement automatique
 
-Si payment-service débite le client puis que sa réponse arrive après l'expiration, `confirmPayment` trouve
-une réservation `EXPIRED` et ne fait rien : **le client a payé mais n'a pas de place** (elles ont pu être revendues).
+**Règle : une place payée qui n'est plus valable est remboursée.** Trois cas :
 
-Ce qu'il faut faire (non implémenté) : déclencher un **remboursement automatique**. event-service publierait
-`reservation.expired` ; payment-service, s'il trouve un paiement `SUCCEEDED` pour cette réservation, appellerait
-le remboursement du prestataire (`refunds` chez Stripe) et passerait le paiement à `REFUNDED`, en restant
-idempotent (un seul remboursement par paiement). Le client serait prévenu par e-mail.
-En attendant, ce cas est rare (il faut une panne de plus de 5 minutes) et se repère dans les logs d'event-service
-(« Paiement confirmé pour la réservation … déjà EXPIRED »).
+| Cas | Où c'est détecté |
+|---|---|
+| Paiement accepté APRÈS l'expiration ou l'annulation de la réservation (ex. Kafka en panne > 5 min) | `ReservationService.confirmPayment` : la réservation n'est plus `PENDING` ni `CONFIRMED` |
+| Le client (ou l'admin) annule une réservation déjà payée | `ReservationService.cancelReservation` |
+| L'admin annule un événement qui a des réservations payées | `EventCancellationService.cancelEvent` |
+
+```
+event-service : refund.requested écrit dans l'outbox (même transaction que l'annulation)
+      │ relais → Kafka
+      ▼
+payment-service : paiement SUCCEEDED ? → 1. enregistre REFUNDED  2. appelle le prestataire (remboursement)
+                  déjà REFUNDED, refusé ou absent → rien à faire (idempotent)
+```
+
+- **C'est event-service qui décide** : lui seul sait, au moment où le paiement arrive, que la réservation
+  n'est plus valable. (Un message `reservation.expired` envoyé à payment-service pourrait arriver AVANT
+  `reservation.created` : deux topics différents ne garantissent aucun ordre.)
+- **Enregistrer PUIS rembourser** : si l'écriture en base échoue, rien n'a été rendu et Kafka réessaie.
+  L'ordre inverse remboursait à chaque nouvel essai (bug vu en test : 10 remboursements pour un paiement).
+- **Clé d'idempotence** (id du paiement) transmise au prestataire : si le commit échoue après le remboursement,
+  le rejeu ne rembourse pas une 2e fois (comme l'en-tête `Idempotency-Key` de Stripe).
+- Une fois le remboursement fait, payment-service publie `payment.refunded` : event-service envoie au client
+  l'e-mail « Remboursement effectué ». Pas encore fait : afficher « Remboursée » dans « Mes réservations ».
+
+## E-mails au client
+
+| Moment | E-mail | Déclencheur |
+|---|---|---|
+| Paiement accepté | **Billet** (HTML) avec **un QR code par place** | `ReservationConfirmed`, écouté APRÈS le commit (`@TransactionalEventListener(AFTER_COMMIT)`) |
+| Remboursement effectué | « Remboursement effectué », avec le montant | message Kafka `payment.refunded` |
+| Événement annulé | « Annulation » | `EventCancellationService` (threads virtuels) |
+
+- **Après le commit** : un billet envoyé pendant la transaction pourrait partir pour une réservation finalement
+  annulée (rollback), et l'appel SMTP, lent, garderait la transaction et ses verrous ouverts.
+- **QR code** : `TICKETFLOW-<id de la réservation>-<n° de place>`, dessiné en PNG avec ZXing et intégré au
+  message (`cid:`). L'id est un UUID aléatoire, donc impossible à deviner ; pour aller plus loin, on signerait
+  le code (HMAC) et on ajouterait un écran de contrôle à l'entrée qui marque chaque place « utilisée ».
+- **Un e-mail qui échoue ne fait jamais échouer** la réservation ou le remboursement : il est journalisé.
+  (Limite : il n'est pas renvoyé automatiquement.)

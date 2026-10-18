@@ -25,7 +25,8 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
 
     @Override
     public Payment save(Payment payment) {
-        PaymentEntity saved = jpaRepository.save(new PaymentEntity(
+        // saveAndFlush : l'écriture part tout de suite en base, une erreur (contrainte…) est connue AVANT la suite
+        PaymentEntity saved = jpaRepository.saveAndFlush(new PaymentEntity(
                 payment.id(),
                 payment.reservationId(),
                 payment.amount().amountCents(),

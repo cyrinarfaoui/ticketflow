@@ -1,5 +1,6 @@
 package com.ticketflow.event_service.infrastructure.messaging;
 
+import com.ticketflow.event_service.application.ClientMailService;
 import com.ticketflow.event_service.application.ReservationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,6 +21,9 @@ class KafkaPaymentResultListenerTest {
     @Mock
     private ReservationService reservationService;
 
+    @Mock
+    private ClientMailService clientMailService;
+
     @InjectMocks
     private KafkaPaymentResultListener listener;
 
@@ -39,6 +43,13 @@ class KafkaPaymentResultListenerTest {
 
         verify(reservationService).rejectPayment(reservationId, "expired_card");
         verify(reservationService, never()).confirmPayment(any());
+    }
+
+    @Test
+    void paiement_rembourse_previent_le_client() {
+        listener.onRefunded(message("REFUNDED", null));
+
+        verify(clientMailService).notifyRefund(reservationId, 10_000L, "TND");
     }
 
     private PaymentResultMessage message(String status, String declineCode) {

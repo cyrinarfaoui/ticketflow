@@ -26,6 +26,15 @@ class PaymentResultTest {
     }
 
     @Test
+    void un_paiement_rembourse_n_est_plus_accepte_et_n_a_pas_de_motif() {
+        PaymentResult result = PaymentResult.refunded();
+
+        assertThat(result.status()).isEqualTo(PaymentStatus.REFUNDED);
+        assertThat(result.declineCode()).isNull();
+        assertThat(result.isSucceeded()).isFalse();
+    }
+
+    @Test
     void un_refus_sans_motif_est_impossible() {
         assertThatThrownBy(() -> new PaymentResult(PaymentStatus.DECLINED, null))
                 .isInstanceOf(IllegalArgumentException.class);

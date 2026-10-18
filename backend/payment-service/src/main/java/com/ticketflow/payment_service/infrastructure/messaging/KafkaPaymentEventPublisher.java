@@ -15,6 +15,7 @@ public class KafkaPaymentEventPublisher implements PaymentEventPublisher {
 
     static final String TOPIC_COMPLETED = "payment.completed";
     static final String TOPIC_FAILED = "payment.failed";
+    static final String TOPIC_REFUNDED = "payment.refunded";
 
     private static final Logger log = LoggerFactory.getLogger(KafkaPaymentEventPublisher.class);
 
@@ -28,7 +29,15 @@ public class KafkaPaymentEventPublisher implements PaymentEventPublisher {
 
     @Override
     public void publish(Payment payment) {
-        String topic = payment.result().isSucceeded() ? TOPIC_COMPLETED : TOPIC_FAILED;
+        send(payment.result().isSucceeded() ? TOPIC_COMPLETED : TOPIC_FAILED, payment);
+    }
+
+    @Override
+    public void publishRefunded(Payment payment) {
+        send(TOPIC_REFUNDED, payment);   // même format de message, statut REFUNDED
+    }
+
+    private void send(String topic, Payment payment) {
         PaymentResultMessage message = PaymentResultMessage.from(payment, Instant.now(clock));
 
         // Clé = id de réservation : tous les messages d'une même réservation vont dans la même partition,
@@ -39,7 +48,7 @@ public class KafkaPaymentEventPublisher implements PaymentEventPublisher {
                         log.error("Échec d'envoi {} pour la réservation {}", topic, message.reservationId(), ex);
                     } else {
                         log.info("{} envoyé pour la réservation {} ({})", topic, message.reservationId(),
-                                message.declineCode() == null ? "accepté" : message.declineCode());
+                                message.declineCode() == null ? message.status() : message.declineCode());
                     }
                 });
     }

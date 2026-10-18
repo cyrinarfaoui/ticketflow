@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Pattern Outbox : les messages Kafka sont d'abord écrits ici, dans la MÊME transaction
+        que la réservation. Un relais planifié (OutboxRelay) les envoie ensuite à Kafka.
+        published_at NULL = pas encore envoyé.
+    -->
+    <changeSet id="014-create-outbox-events" author="cyrine">
+        <createTable tableName="outbox_events">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="topic" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="message_key" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payload" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp with time zone">
+                <constraints nullable="false"/>
+            </column>
+            <column name="published_at" type="timestamp with time zone"/>
+        </createTable>
+
+        <!-- Le relais cherche toutes les secondes les messages pas encore envoyés, du plus ancien au plus récent -->
+        <createIndex tableName="outbox_events" indexName="idx_outbox_events_unpublished">
+            <column name="published_at"/>
+            <column name="created_at"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>
