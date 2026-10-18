@@ -1,0 +1,38 @@
+# Mailpit : faux serveur e-mail (SMTP 1025), interface web sur le port 8025
+apiVersion: apps/v1
+kind: Deployment                 # « garde N Pods de ce modèle en vie, en permanence »
+metadata:
+  name: mailpit
+  namespace: ticketflow
+spec:
+  replicas: 1                    # le nombre de copies voulues
+  selector:
+    matchLabels:
+      app: mailpit               # QUELS Pods ce Deployment surveille : ceux qui portent cette étiquette
+  template:                      # le MODÈLE des Pods qu'il fabrique (c'est ton Pod d'avant)
+    metadata:
+      labels:
+        app: mailpit             # doit correspondre au selector ci-dessus
+    spec:
+      containers:
+        - name: mailpit
+          image: axllent/mailpit:v1.21
+          ports:
+            - containerPort: 8025   # interface web
+            - containerPort: 1025   # SMTP
+
+---
+# Service : adresse STABLE "mailpit" vers les Pods de Mailpit (qui, eux, changent de nom et d'IP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: mailpit                  # le nom DNS dans le cluster : event-service enverra ses e-mails à "mailpit:1025"
+  namespace: ticketflow
+spec:
+  selector:
+    app: mailpit                 # vers quels Pods envoyer le trafic : ceux qui portent cette étiquette
+  ports:
+    - name: web
+      port: 8025
+    - name: smtp
+      port: 1025

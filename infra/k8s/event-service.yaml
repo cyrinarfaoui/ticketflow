@@ -1,0 +1,75 @@
+# Configuration d'event-service (rien de secret ici : le mot de passe reste dans le Secret)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: event-service-config
+  namespace: ticketflow
+data:
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-event-service:5432/eventdb
+  SPRING_DATASOURCE_USERNAME: ticketflow
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+  # Les jetons portent l'émetteur vu par le NAVIGATEUR (localhost:8081)…
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8081/realms/ticketflow
+  # … mais DANS le cluster, les clés publiques de Keycloak se lisent via son Service
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/ticketflow/protocol/openid-connect/certs
+  APP_CORS_ALLOWED_ORIGIN: http://localhost:4200
+  MAIL_HOST: mailpit
+  MAIL_PORT: "1025"
+  # La JVM dimensionne sa mémoire d'après la limite du conteneur (voir resources plus bas)
+  JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-service
+  namespace: ticketflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: event-service
+  template:
+    metadata:
+      labels:
+        app: event-service
+    spec:
+      containers:
+        - name: event-service
+          image: infra-event-service:latest     # l'image déjà construite par docker compose
+          imagePullPolicy: Never                # image locale : ne pas la chercher sur Internet
+          envFrom:
+            - configMapRef:
+                name: event-service-config      # toutes les clés de la ConfigMap deviennent des variables d'environnement
+          env:
+            - name: SPRING_DATASOURCE_PASSWORD  # le mot de passe : depuis le Secret (le même que PostgreSQL)
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+          ports:
+            - containerPort: 8080
+          # Les 3 sondes de santé (fournies par Spring Boot Actuator)
+          startupProbe:                         # démarrage lent (Liquibase…) : on lui laisse jusqu'à 3 minutes
+            httpGet: { path: /actuator/health/liveness, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 36
+          livenessProbe:                        # bloqué ? → Kubernetes REDÉMARRE le conteneur
+            httpGet: { path: /actuator/health/liveness, port: 8080 }
+            periodSeconds: 10
+          readinessProbe:                       # pas prêt ? → plus de trafic envoyé à ce Pod (sans le tuer)
+            httpGet: { path: /actuator/health/readiness, port: 8080 }
+            periodSeconds: 5
+          resources:
+            requests: { memory: 384Mi, cpu: 100m }  # ce que le Pod RÉSERVE sur le nœud
+            limits: { memory: 768Mi }               # au-delà : le conteneur est arrêté (OOMKilled)
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: event-service             # les autres services l'appelleront "event-service:8080"
+  namespace: ticketflow
+spec:
+  selector:
+    app: event-service
+  ports:
+    - port: 8080
