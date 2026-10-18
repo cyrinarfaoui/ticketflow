@@ -5,7 +5,7 @@ import com.ticketflow.payment_service.domain.Payment;
 import java.time.Instant;
 
 /**
- * Message publié sur payment.completed ou payment.failed.
+ * Message publié sur payment.completed, payment.failed ou payment.refunded.
  * declineCode = le code Stripe du refus (insufficient_funds…), null si le paiement est accepté.
  */
 public record PaymentResultMessage(

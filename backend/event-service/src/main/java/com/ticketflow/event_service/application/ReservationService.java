@@ -10,6 +10,7 @@ import com.ticketflow.event_service.domain.ReservationStatus;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -33,15 +34,18 @@ public class ReservationService {
     private final EventRepository eventRepository;
     private final ReservationRepository reservationRepository;
     private final ReservationEventPublisher eventPublisher;
+    private final ApplicationEventPublisher applicationEvents;
     private final Clock clock;
 
     public ReservationService(EventRepository eventRepository,
                               ReservationRepository reservationRepository,
                               ReservationEventPublisher eventPublisher,
+                              ApplicationEventPublisher applicationEvents,
                               Clock clock) {
         this.eventRepository = eventRepository;
         this.reservationRepository = reservationRepository;
         this.eventPublisher = eventPublisher;
+        this.applicationEvents = applicationEvents;
         this.clock = clock;
     }
 
@@ -70,17 +74,26 @@ public class ReservationService {
     /**
      * Saga, chemin "succès" (payment.completed) : la réservation est confirmée.
      * Idempotent : un message rejoué sur une réservation déjà confirmée ne change rien.
+     * Paiement arrivé TROP TARD (réservation expirée ou annulée entre-temps) : le client a payé sans place,
+     * on demande son remboursement.
      */
     @Transactional
     public void confirmPayment(UUID reservationId) {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new NoSuchElementException("Réservation introuvable : " + reservationId));
+        if (reservation.isConfirmed()) {
+            log.info("Paiement confirmé pour la réservation {} déjà confirmée : rien à faire", reservationId);
+            return;
+        }
         if (!reservation.isPending()) {
-            log.info("Paiement confirmé pour la réservation {} déjà {} : rien à faire", reservationId, reservation.getStatus());
+            log.warn("Paiement accepté pour la réservation {} déjà {} : remboursement demandé", reservationId, reservation.getStatus());
+            eventPublisher.publishRefundRequested(reservation);
             return;
         }
         reservation.confirm();
         reservationRepository.save(reservation);
+        // Le billet partira par e-mail APRÈS le commit (ClientMailService, @TransactionalEventListener)
+        applicationEvents.publishEvent(new ReservationConfirmed(reservationId));
     }
 
     /**
@@ -107,6 +120,31 @@ public class ReservationService {
     }
 
     /**
+     * Expiration (batch) : le client n'a pas reçu de réponse de paiement dans le délai.
+     * Comme une compensation : la réservation expire ET ses places sont rendues à l'événement.
+     */
+    @Transactional
+    public void expireReservation(UUID reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new NoSuchElementException("Réservation introuvable : " + reservationId));
+
+        // Payée ou annulée entre la lecture du batch et maintenant : on ne touche à rien
+        if (!reservation.isPending()) {
+            log.info("Réservation {} déjà {} : pas d'expiration", reservationId, reservation.getStatus());
+            return;
+        }
+
+        reservation.expire();
+        reservationRepository.save(reservation);
+
+        // Verrou : on modifie l'événement, comme une réservation ou une compensation
+        Event event = eventRepository.findByIdForUpdate(reservation.getEventId())
+                .orElseThrow(() -> new NoSuchElementException("Événement introuvable : " + reservation.getEventId()));
+        event.release(reservation.getSeats());
+        eventRepository.save(event);
+    }
+
+    /**
      * Annule une réservation.
      * Seul son propriétaire peut le faire, ou un administrateur (dashboard).
      * La vérification est faite ICI, côté serveur : cacher le bouton dans le frontend ne protège rien.
@@ -120,8 +158,12 @@ public class ReservationService {
             throw new ReservationAccessDeniedException("Vous ne pouvez annuler que vos propres réservations");
         }
 
+        boolean paid = reservation.isConfirmed();
         reservation.cancel();
         reservationRepository.save(reservation);
+        if (paid) {
+            eventPublisher.publishRefundRequested(reservation);   // places payées puis annulées : on rembourse
+        }
 
         Event event = eventRepository.findByIdForUpdate(reservation.getEventId())
                 .orElseThrow(() -> new NoSuchElementException("Événement introuvable : " + reservation.getEventId()));

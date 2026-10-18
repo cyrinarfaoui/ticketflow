@@ -2,12 +2,15 @@ package com.ticketflow.event_service.application;
 
 import com.ticketflow.event_service.application.port.out.ClientNotifier;
 import com.ticketflow.event_service.application.port.out.EventRepository;
+import com.ticketflow.event_service.application.port.out.ReservationEventPublisher;
 import com.ticketflow.event_service.application.port.out.ReservationRepository;
 import com.ticketflow.event_service.domain.CancellationNotice;
 import com.ticketflow.event_service.domain.CancellationReport;
 import com.ticketflow.event_service.domain.Event;
 import com.ticketflow.event_service.domain.EventCategory;
 import com.ticketflow.event_service.domain.EventStatus;
+import com.ticketflow.event_service.domain.RefundNotice;
+import com.ticketflow.event_service.domain.TicketNotice;
 import com.ticketflow.event_service.domain.Reservation;
 import com.ticketflow.event_service.domain.ReservationStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,11 +30,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -40,6 +45,7 @@ class EventCancellationServiceTest {
 
     @Mock private EventRepository eventRepository;
     @Mock private ReservationRepository reservationRepository;
+    @Mock private ReservationEventPublisher eventPublisher;
 
     private final Event concert = new Event(UUID.randomUUID(), "Concert de jazz", "", "Tunis", EventCategory.CONCERT,
             LocalDateTime.of(2030, 12, 15, 20, 0), 500, 5_000);
@@ -64,8 +70,14 @@ class EventCancellationServiceTest {
         lenient().when(eventRepository.findByIdForUpdate(concert.getId())).thenReturn(Optional.of(concert));
     }
 
-    private EventCancellationService service(ClientNotifier notifier) {
-        return new EventCancellationService(eventRepository, reservationRepository, notifier, transaction);
+    // Les tests ne s'intéressent qu'à l'e-mail d'annulation : une lambda suffit à le simuler
+    private EventCancellationService service(Consumer<CancellationNotice> onCancelled) {
+        ClientNotifier notifier = new ClientNotifier() {
+            @Override public void notifyEventCancelled(CancellationNotice notice) { onCancelled.accept(notice); }
+            @Override public void sendTicket(TicketNotice notice) { /* hors sujet ici */ }
+            @Override public void notifyRefund(RefundNotice notice) { /* hors sujet ici */ }
+        };
+        return new EventCancellationService(eventRepository, reservationRepository, eventPublisher, notifier, transaction);
     }
 
     private Reservation reservation(String email) {
@@ -91,6 +103,19 @@ class EventCancellationServiceTest {
     }
 
     @Test
+    void les_reservations_deja_payees_sont_remboursees() {
+        Reservation paid = reservation("a@mail.test");
+        paid.confirm();
+        Reservation pending = reservation("b@mail.test");   // rien n'a été débité : rien à rembourser
+        when(reservationRepository.findActiveByEventId(concert.getId())).thenReturn(List.of(paid, pending));
+
+        service(notice -> notifiedEmails.add(notice.email())).cancelEvent(concert.getId());
+
+        verify(eventPublisher).publishRefundRequested(paid);
+        verify(eventPublisher, never()).publishRefundRequested(pending);
+    }
+
+    @Test
     void previent_les_clients_seulement_apres_le_commit_de_la_transaction() {
         when(reservationRepository.findActiveByEventId(concert.getId())).thenReturn(List.of(reservation("a@mail.test")));
         AtomicBoolean committedWhenNotified = new AtomicBoolean(false);
@@ -105,7 +130,7 @@ class EventCancellationServiceTest {
     void un_echec_d_envoi_ne_bloque_pas_les_autres_clients() {
         when(reservationRepository.findActiveByEventId(concert.getId()))
                 .thenReturn(List.of(reservation("ok1@mail.test"), reservation("ko@mail.test"), reservation("ok2@mail.test")));
-        ClientNotifier notifier = notice -> {
+        Consumer<CancellationNotice> notifier = notice -> {
             if (notice.email().startsWith("ko")) {
                 throw new IllegalStateException("Boîte mail inexistante");
             }
@@ -136,7 +161,7 @@ class EventCancellationServiceTest {
         // En séquentiel : 200 × 50 ms = 10 secondes. En parallèle (threads virtuels) : ~50 ms + un peu.
         List<Reservation> reservations = IntStream.range(0, 200).mapToObj(i -> reservation("client" + i + "@mail.test")).toList();
         when(reservationRepository.findActiveByEventId(concert.getId())).thenReturn(reservations);
-        ClientNotifier slowNotifier = notice -> {
+        Consumer<CancellationNotice> slowNotifier = notice -> {
             try {
                 Thread.sleep(50);   // simule l'aller-retour réseau vers le serveur SMTP
             } catch (InterruptedException e) {

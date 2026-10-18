@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -43,12 +44,13 @@ class ReservationServiceTest {
     @Mock private EventRepository eventRepository;
     @Mock private ReservationRepository reservationRepository;
     @Mock private ReservationEventPublisher eventPublisher;
+    @Mock private ApplicationEventPublisher applicationEvents;
 
     private ReservationService service;
 
     @BeforeEach
     void setUp() {
-        service = new ReservationService(eventRepository, reservationRepository, eventPublisher, CLOCK);
+        service = new ReservationService(eventRepository, reservationRepository, eventPublisher, applicationEvents, CLOCK);
     }
 
     @Test
@@ -156,6 +158,7 @@ class ReservationServiceTest {
 
         assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
         verify(reservationRepository).save(reservation);
+        verify(applicationEvents).publishEvent(new ReservationConfirmed(reservation.getId()));   // → billet par e-mail
     }
 
     @Test
@@ -167,6 +170,51 @@ class ReservationServiceTest {
         service.confirmPayment(reservation.getId());   // message Kafka livré une 2e fois
 
         verify(reservationRepository, never()).save(any());
+        verify(eventPublisher, never()).publishRefundRequested(any());   // un doublon n'est pas un trop-perçu
+        verify(applicationEvents, never()).publishEvent(any());         // ni un 2e billet
+    }
+
+    // ---------- Remboursement : une place payée qui n'est plus valable est remboursée ----------
+
+    @Test
+    void paiement_accepte_apres_expiration_demande_un_remboursement() {
+        // Kafka en panne > 5 min : le batch a expiré la réservation, puis la banque a débité le client
+        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), "user-1", 2);
+        reservation.expire();
+        when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
+
+        service.confirmPayment(reservation.getId());
+
+        assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.EXPIRED);   // pas de place pour autant
+        verify(eventPublisher).publishRefundRequested(reservation);
+    }
+
+    @Test
+    void annuler_une_reservation_payee_demande_un_remboursement() {
+        Event concert = event("Concert");
+        concert.book(2);
+        Reservation reservation = new Reservation(UUID.randomUUID(), concert.getId(), "user-1", 2);
+        reservation.confirm();
+        when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
+        when(eventRepository.findByIdForUpdate(concert.getId())).thenReturn(Optional.of(concert));
+
+        service.cancelReservation(reservation.getId(), "user-1", false);
+
+        verify(eventPublisher).publishRefundRequested(reservation);
+    }
+
+    @Test
+    void annuler_une_reservation_en_attente_ne_rembourse_rien() {
+        // Rien n'a encore été débité ; si le paiement arrive ensuite, confirmPayment demandera le remboursement
+        Event concert = event("Concert");
+        concert.book(2);
+        Reservation reservation = new Reservation(UUID.randomUUID(), concert.getId(), "user-1", 2);
+        when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
+        when(eventRepository.findByIdForUpdate(concert.getId())).thenReturn(Optional.of(concert));
+
+        service.cancelReservation(reservation.getId(), "user-1", false);
+
+        verify(eventPublisher, never()).publishRefundRequested(any());
     }
 
     @Test
@@ -193,6 +241,43 @@ class ReservationServiceTest {
 
         service.rejectPayment(reservation.getId(), "card_declined");
 
+        verify(reservationRepository, never()).save(any());
+        verifyNoInteractions(eventRepository);
+    }
+
+    // ---------- Expiration (batch) : le client n'a pas payé à temps ----------
+
+    @Test
+    void expirer_une_reservation_rend_ses_places_a_l_evenement() {
+        // ARRANGE (préparer) : un concert de 100 places, dont 2 bloquées par une réservation en attente
+        Event concert = event("Concert");
+        concert.book(2);
+        Reservation reservation = new Reservation(UUID.randomUUID(), concert.getId(), "user-1", 2);
+        when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
+        when(eventRepository.findByIdForUpdate(concert.getId())).thenReturn(Optional.of(concert));
+
+        // ACT (agir) : le batch fait expirer la réservation
+        service.expireReservation(reservation.getId());
+
+        // ASSERT (vérifier) : expirée ET les places rendues
+        assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.EXPIRED);
+        assertThat(concert.getAvailableSeats()).isEqualTo(100);
+        verify(reservationRepository).save(reservation);
+        verify(eventRepository).save(concert);
+    }
+
+    @Test
+    void une_reservation_payee_entre_temps_n_expire_pas() {
+        // ARRANGE : la banque a répondu juste avant le batch, la réservation est déjà confirmée
+        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), "user-1", 2);
+        reservation.confirm();
+        when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
+
+        // ACT
+        service.expireReservation(reservation.getId());
+
+        // ASSERT : rien n'a changé, rien n'est enregistré, l'événement n'est même pas lu
+        assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
         verify(reservationRepository, never()).save(any());
         verifyNoInteractions(eventRepository);
     }

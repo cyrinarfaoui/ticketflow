@@ -9,4 +9,10 @@ public interface ReservationEventPublisher {
      * (montant en centimes et jeton de moyen de paiement).
      */
     void publishCreated(Reservation reservation, long amountCents, String paymentMethod);
+
+    /**
+     * Demande le remboursement du paiement de cette réservation : le client a payé
+     * mais n'a pas (ou plus) de place (paiement arrivé après l'expiration, annulation…).
+     */
+    void publishRefundRequested(Reservation reservation);
 }

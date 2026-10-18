@@ -7,15 +7,20 @@ import com.ticketflow.payment_service.domain.Payment;
 import com.ticketflow.payment_service.domain.PaymentRequest;
 import com.ticketflow.payment_service.domain.PaymentResult;
 import com.ticketflow.payment_service.domain.PaymentRules;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class PaymentService {
+
+    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
     private final PaymentRepository repository;
     private final PaymentProvider provider;
@@ -50,5 +55,29 @@ public class PaymentService {
         Payment payment = repository.save(Payment.of(request, result, Instant.now(clock)));
         publisher.publish(payment);
         return payment;
+    }
+
+    /**
+     * Remboursement demandé par event-service (refund.requested) : le client a payé mais n'a pas de place.
+     * Idempotent : on ne rembourse qu'un paiement ACCEPTÉ ; déjà remboursé, refusé ou absent → rien à faire.
+     * Renvoie le paiement remboursé, ou null s'il n'y avait rien à rembourser.
+     */
+    @Transactional
+    public Payment refund(UUID reservationId) {
+        Optional<Payment> found = repository.findByReservationId(reservationId);
+        if (found.isEmpty() || !found.get().result().isSucceeded()) {
+            log.info("Remboursement demandé pour la réservation {} : rien à rembourser ({})", reservationId,
+                    found.map(payment -> payment.result().status().name()).orElse("aucun paiement"));
+            return null;
+        }
+        Payment payment = found.get();
+        // 1. D'ABORD noter le remboursement en base : si l'enregistrement échoue, on n'a rien rendu (et Kafka réessaiera).
+        Payment refunded = repository.save(payment.refunded());
+        // 2. PUIS rendre l'argent. Si le commit échoue après coup, le message est rejoué : le prestataire reçoit
+        //    la même clé d'idempotence (id du paiement) et ne rembourse pas une 2e fois.
+        provider.refund(payment);
+        publisher.publishRefunded(refunded);
+        log.info("Paiement de la réservation {} remboursé", reservationId);
+        return refunded;
     }
 }

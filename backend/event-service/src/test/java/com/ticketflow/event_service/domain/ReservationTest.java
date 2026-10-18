@@ -101,4 +101,13 @@ class ReservationTest {
         assertThatThrownBy(() -> reservation.failPayment("card_declined"))
                 .isInstanceOf(IllegalStateException.class);
     }
+
+    @Test
+    void un_code_de_billet_par_place() {
+        UUID id = UUID.randomUUID();
+        Reservation reservation = new Reservation(id, UUID.randomUUID(), "user-1", 3);
+
+        assertThat(reservation.ticketCodes())
+                .containsExactly("TICKETFLOW-" + id + "-1", "TICKETFLOW-" + id + "-2", "TICKETFLOW-" + id + "-3");
+    }
 }

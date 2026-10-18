@@ -11,4 +11,12 @@ public record Payment(UUID id, UUID reservationId, Money amount, String paymentM
         return new Payment(UUID.randomUUID(), request.reservationId(), request.amount(),
                 request.paymentMethod(), result, createdAt);
     }
+
+    /** Le même paiement, remboursé. Seul un paiement accepté peut l'être. */
+    public Payment refunded() {
+        if (!result.isSucceeded()) {
+            throw new IllegalStateException("Seul un paiement accepté peut être remboursé");
+        }
+        return new Payment(id, reservationId, amount, paymentMethod, PaymentResult.refunded(), createdAt);
+    }
 }

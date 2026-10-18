@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Réparation des données : avant la correction, le batch d'expiration ne rendait pas les places.
+        On recalcule les places disponibles de chaque événement :
+        capacité - places des réservations encore actives (en attente de paiement ou confirmées).
+        Exécuté une seule fois (Liquibase garde la trace dans DATABASECHANGELOG).
+    -->
+    <changeSet id="013-restore-seats-of-expired-reservations" author="cyrine">
+        <sql>
+            UPDATE events e
+            SET available_seats = e.total_seats - COALESCE((
+                SELECT SUM(r.seats)
+                FROM reservations r
+                WHERE r.event_id = e.id
+                  AND r.status IN ('PENDING', 'CONFIRMED')
+            ), 0)
+        </sql>
+    </changeSet>
+</databaseChangeLog>

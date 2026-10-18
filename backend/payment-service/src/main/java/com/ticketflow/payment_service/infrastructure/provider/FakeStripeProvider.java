@@ -2,8 +2,11 @@ package com.ticketflow.payment_service.infrastructure.provider;
 
 import com.ticketflow.payment_service.application.port.out.PaymentProvider;
 import com.ticketflow.payment_service.domain.DeclineCode;
+import com.ticketflow.payment_service.domain.Payment;
 import com.ticketflow.payment_service.domain.PaymentRequest;
 import com.ticketflow.payment_service.domain.PaymentResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
@@ -12,6 +15,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class FakeStripeProvider implements PaymentProvider {
+
+    private static final Logger log = LoggerFactory.getLogger(FakeStripeProvider.class);
 
     @Override
     public PaymentResult charge(PaymentRequest request) {
@@ -23,5 +28,13 @@ public class FakeStripeProvider implements PaymentProvider {
             // Jeton inconnu : en cas de doute, on REFUSE (fail closed), jamais on n'accepte
             default -> PaymentResult.declined(DeclineCode.INVALID_PAYMENT_METHOD);
         };
+    }
+
+    @Override
+    public void refund(Payment payment) {
+        // En mode test, Stripe accepte toujours le remboursement d'un paiement réussi.
+        // Le vrai appel enverrait l'en-tête "Idempotency-Key: <id du paiement>" : un rejeu ne rembourse pas deux fois.
+        log.info("Remboursement simulé de {} {} (réservation {}, clé d'idempotence {})",
+                payment.amount().amountCents(), payment.amount().currency(), payment.reservationId(), payment.id());
     }
 }
