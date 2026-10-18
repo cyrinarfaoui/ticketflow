@@ -90,6 +90,33 @@ services:
     ports:
       - "8080:8080"
 
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: ticketflow-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      # Notre configuration, montée en lecture seule (:ro) à l'endroit où Prometheus la cherche
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - event-service
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    container_name: ticketflow-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      # Source de données (Prometheus) et emplacement des tableaux de bord, déclarés par fichier
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      # Les tableaux de bord eux-mêmes, en JSON ("dashboard as code")
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+
   # Faux serveur e-mail : reçoit les e-mails (SMTP 1025) et les affiche sur http://localhost:8025
   mailpit:
     image: axllent/mailpit:v1.21
@@ -166,3 +193,5 @@ volumes:
   postgres_event_data:
   keycloak_data:
   postgres_payment_data:
+  prometheus_data:
+  grafana_data:

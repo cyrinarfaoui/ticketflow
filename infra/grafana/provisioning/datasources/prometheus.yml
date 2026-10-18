@@ -1,0 +1,15 @@
+# Grafana se connecte automatiquement à Prometheus au démarrage (rien à cliquer)
+apiVersion: 1
+
+# Supprimée puis recréée à chaque démarrage : la source correspond toujours exactement à ce fichier
+deleteDatasources:
+  - name: Prometheus
+    orgId: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus                   # identifiant fixe : les tableaux de bord JSON y font référence
+    access: proxy                     # c'est le SERVEUR Grafana qui interroge Prometheus, pas ton navigateur
+    url: http://prometheus:9090       # nom du service dans docker-compose
+    isDefault: true

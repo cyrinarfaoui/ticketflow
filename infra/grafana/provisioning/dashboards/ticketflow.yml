@@ -1,0 +1,11 @@
+# Grafana charge au démarrage tous les tableaux de bord JSON du dossier /etc/grafana/dashboards
+# ("dashboard as code" : versionnés dans Git, identiques sur tous les postes)
+apiVersion: 1
+
+providers:
+  - name: TicketFlow
+    folder: TicketFlow
+    type: file
+    allowUiUpdates: false          # la source de vérité est le fichier JSON, pas l'interface
+    options:
+      path: /etc/grafana/dashboards
