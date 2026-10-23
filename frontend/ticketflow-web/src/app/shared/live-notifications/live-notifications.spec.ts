@@ -13,6 +13,7 @@ describe('LiveNotifications', () => {
     unreadCount: WritableSignal<number>;
     status: WritableSignal<StreamStatus>;
     markAllRead: jasmine.Spy;
+    showsPublicActivity: WritableSignal<boolean>;
   };
 
   const notification = (message: string): LiveNotification =>
@@ -24,6 +25,7 @@ describe('LiveNotifications', () => {
       unreadCount: signal(0),
       status: signal('open'),
       markAllRead: jasmine.createSpy('markAllRead'),
+      showsPublicActivity: signal(true),   // profil admin : l'activité publique
     };
     TestBed.configureTestingModule({
       imports: [LiveNotifications],
@@ -79,6 +81,15 @@ describe('LiveNotifications', () => {
     render();
 
     expect(element.querySelector('.live-empty')?.textContent).toContain('Aucune activité');
+  });
+
+  it("affiche « Mes notifications » pour un client", () => {
+    store.showsPublicActivity.set(false);
+    bell().click();
+    render();
+
+    expect(element.querySelector('#live-panel-title')?.textContent).toContain('Mes notifications');
+    expect(element.querySelector('.live-empty')?.textContent).toContain('Aucune notification');
   });
 
   it("annonce la dernière notification aux lecteurs d'écran (aria-live)", () => {

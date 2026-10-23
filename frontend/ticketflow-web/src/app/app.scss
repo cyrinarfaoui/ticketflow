@@ -4,7 +4,7 @@
   align-items: center;
   gap: 1rem 2rem;
   padding: 1rem 1.5rem;
-  background-color: #1f2937;
+  background-color: var(--color-brand-navy);
   color: #ffffff;
 }
 
@@ -36,7 +36,7 @@
     // La page actuelle : texte blanc + soulignement bleu
     &.is-active {
       color: #ffffff;
-      border-bottom-color: #60a5fa;
+      border-bottom-color: var(--color-brand-green);
     }
   }
 }
@@ -70,7 +70,7 @@
 // Contour visible au clavier pour tous les liens et boutons du header
 .app-header a:focus-visible,
 .app-header button:focus-visible {
-  outline: 3px solid #93c5fd;
+  outline: 3px solid var(--color-brand-sky);
   outline-offset: 3px;
 }
 // ---------- Badge : nombre de réservations en cours ----------
@@ -80,7 +80,7 @@
   margin-left: 0.35rem;
   padding: 0.05rem 0.4rem;
   border-radius: 999px;
-  background-color: #60a5fa;
+  background-color: var(--color-brand-green);
   color: #0f172a;
   font-size: 0.8rem;
   font-weight: 700;

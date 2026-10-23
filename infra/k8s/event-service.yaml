@@ -12,7 +12,7 @@ data:
   SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8081/realms/ticketflow
   # … mais DANS le cluster, les clés publiques de Keycloak se lisent via son Service
   SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/ticketflow/protocol/openid-connect/certs
-  APP_CORS_ALLOWED_ORIGIN: http://localhost:4200
+  APP_CORS_ALLOWED_ORIGIN: http://ticketflow.localhost
   MAIL_HOST: mailpit
   MAIL_PORT: "1025"
   # La JVM dimensionne sa mémoire d'après la limite du conteneur (voir resources plus bas)

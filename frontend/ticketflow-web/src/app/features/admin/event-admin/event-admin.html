@@ -30,6 +30,7 @@
           <select #statusBox (change)="onStatusChange(statusBox.value)">
             <option value="">Tous les statuts</option>
             <option value="OPEN">Ouverts</option>
+            <option value="FULL">Complets</option>
             <option value="CLOSED">Clôturés</option>
             <option value="CANCELLED">Annulés</option>
           </select>
@@ -54,8 +55,9 @@
               <!-- Ligne compacte : titre et statut sur la même ligne, détails dessous -->
               <span class="list-item__top">
                 <span class="list-item__title">{{ event.title }}</span>
-                <span class="badge" [attr.data-status]="isPast(event) && event.status !== 'CANCELLED' ? 'PAST' : event.status">
-                  {{ event.status === 'CANCELLED' ? 'Annulé' : isPast(event) ? 'Passé' : event.status === 'CLOSED' ? 'Clôturé' : 'Ouvert' }}
+                @let state = badge(event);
+                <span class="badge" [attr.data-status]="state.status">
+                  {{ state.label }}
                 </span>
               </span>
               <span class="list-item__meta">
@@ -87,29 +89,65 @@
               <h2><span class="icon" aria-hidden="true">add_circle</span> Nouvel événement</h2>
             } @else if (event) {
               <h2>{{ event.title }}</h2>
-              <span class="badge" [attr.data-status]="isPast(event) && event.status !== 'CANCELLED' ? 'PAST' : event.status">
-                {{ event.status === 'CANCELLED' ? 'Annulé' : isPast(event) ? 'Passé' : event.status === 'CLOSED' ? 'Clôturé' : 'Ouvert' }}
+              @let state = badge(event);
+                <span class="badge" [attr.data-status]="state.status">
+                {{ state.label }}
               </span>
             }
           </div>
 
-          <!-- Grille 2 colonnes : le formulaire tient dans l'écran, sans défiler -->
+          <p class="hint required-legend"><span class="required" aria-hidden="true">*</span> Champs obligatoires</p>
+          <!-- Grille 2 colonnes : le formulaire tient dans l'écran, sans défiler. Chaque erreur s'affiche sous SON champ -->
           <div class="fields">
-            <label>Titre <input formControlName="title" placeholder="Ex. Concert de jazz" /></label>
-            <label>Lieu <input formControlName="location" placeholder="Ex. Théâtre municipal, Tunis" /></label>
-            <label>Catégorie
-              <select formControlName="category">
+            <div class="field">
+              @let titleError = error('title');
+              <label for="event-title">Titre <span class="required" aria-hidden="true">*</span></label>
+              <input id="event-title" formControlName="title" placeholder="Ex. Concert de jazz" aria-required="true"
+                     [attr.aria-invalid]="titleError ? true : null" [attr.aria-describedby]="titleError ? 'event-title-error' : null" />
+              @if (titleError) {
+                <p id="event-title-error" class="field-error">{{ titleError }}</p>
+              }
+            </div>
+            <div class="field">
+              @let locationError = error('location');
+              <label for="event-location">Lieu <span class="required" aria-hidden="true">*</span></label>
+              <input id="event-location" formControlName="location" placeholder="Ex. Théâtre municipal, Tunis" aria-required="true"
+                     [attr.aria-invalid]="locationError ? true : null" [attr.aria-describedby]="locationError ? 'event-location-error' : null" />
+              @if (locationError) {
+                <p id="event-location-error" class="field-error">{{ locationError }}</p>
+              }
+            </div>
+            <div class="field">
+              @let categoryError = error('category');
+              <label for="event-category">Catégorie <span class="required" aria-hidden="true">*</span></label>
+              <select id="event-category" formControlName="category" aria-required="true"
+                      [attr.aria-invalid]="categoryError ? true : null" [attr.aria-describedby]="categoryError ? 'event-category-error' : null">
                 <option value="" disabled>Choisir une catégorie</option>
                 @for (category of categories; track category.value) {
                   <option [value]="category.value">{{ category.label }}</option>
                 }
               </select>
-            </label>
-            <label>Date <input type="datetime-local" formControlName="date" /></label>
+              @if (categoryError) {
+                <p id="event-category-error" class="field-error">{{ categoryError }}</p>
+              }
+            </div>
+            <div class="field">
+              @let dateError = error('date');
+              <label for="event-date">Date <span class="required" aria-hidden="true">*</span></label>
+              <input id="event-date" type="datetime-local" formControlName="date" aria-required="true"
+                     [attr.aria-invalid]="dateError ? true : null" [attr.aria-describedby]="dateError ? 'event-date-error' : null" />
+              @if (dateError) {
+                <p id="event-date-error" class="field-error">{{ dateError }}</p>
+              }
+            </div>
             @let booked = event ? event.totalSeats - event.availableSeats : 0;
             @let remaining = form.controls.totalSeats.value - booked;
-            <label>Capacité totale
-              <input type="number" [min]="booked || 1" formControlName="totalSeats" aria-describedby="seats-hint" />
+            <div class="field">
+              @let seatsError = error('totalSeats');
+              <label for="event-seats">Capacité totale <span class="required" aria-hidden="true">*</span></label>
+              <input id="event-seats" type="number" [min]="booked || 1" formControlName="totalSeats" aria-required="true"
+                     [attr.aria-invalid]="seatsError ? true : null"
+                     [attr.aria-describedby]="((event && !creating() ? 'seats-hint ' : '') + (seatsError ? 'event-seats-error' : '')).trim() || null" />
               <!-- Recalculé pendant la frappe : l'admin voit l'effet de son changement avant d'enregistrer -->
               @if (event && !creating()) {
                 <span id="seats-hint" class="hint" [class.hint--error]="remaining < 0">
@@ -121,14 +159,24 @@
                   }
                 </span>
               }
-            </label>
-            <label>Prix (TND) <input type="number" min="0.01" step="0.01" formControlName="price" /></label>
-            <label class="fields__full">Description <textarea rows="2" formControlName="description"></textarea></label>
+              @if (seatsError) {
+                <p id="event-seats-error" class="field-error">{{ seatsError }}</p>
+              }
+            </div>
+            <div class="field">
+              @let priceError = error('price');
+              <label for="event-price">Prix (TND) <span class="required" aria-hidden="true">*</span></label>
+              <input id="event-price" type="number" min="0.01" step="0.01" formControlName="price" aria-required="true"
+                     [attr.aria-invalid]="priceError ? true : null" [attr.aria-describedby]="priceError ? 'event-price-error' : null" />
+              @if (priceError) {
+                <p id="event-price-error" class="field-error">{{ priceError }}</p>
+              }
+            </div>
+            <div class="field fields__full">
+              <label for="event-description">Description</label>
+              <textarea id="event-description" rows="2" formControlName="description"></textarea>
+            </div>
           </div>
-
-          @if (form.invalid && form.touched) {
-            <p class="error" role="alert">Vérifiez les champs encadrés en rouge.</p>
-          }
           @if (event && !creating()) {
             @if (event.status === 'CANCELLED') {
               <p class="hint">Événement annulé : il ne peut plus être modifié.</p>
@@ -163,4 +211,4 @@
     </section>
 
   </div>
-</main>
+</main>

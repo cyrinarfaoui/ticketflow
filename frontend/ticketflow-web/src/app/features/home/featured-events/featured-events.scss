@@ -16,11 +16,11 @@
 }
 
 .featured__all {
-  color: #1d4ed8;
+  color: var(--color-primary-dark);
   font-weight: 600;
 
   &:focus-visible {
-    outline: 3px solid #93c5fd;
+    outline: 3px solid var(--color-brand-sky);
     outline-offset: 2px;
   }
 }

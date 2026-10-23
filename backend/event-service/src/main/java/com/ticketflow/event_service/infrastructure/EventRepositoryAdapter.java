@@ -56,8 +56,8 @@ public class EventRepositoryAdapter implements EventRepository {
     }
 
     @Override
-    public Page<Event> searchForAdmin(String title, EventStatus status, Pageable pageable) {
-        return jpaRepository.searchForAdmin(title, status, pageable).map(EventMapper::toDomain);
+    public Page<Event> searchForAdmin(String title, EventStatus status, Boolean soldOut, Pageable pageable) {
+        return jpaRepository.searchForAdmin(title, status, soldOut, pageable).map(EventMapper::toDomain);
     }
 
     @Override

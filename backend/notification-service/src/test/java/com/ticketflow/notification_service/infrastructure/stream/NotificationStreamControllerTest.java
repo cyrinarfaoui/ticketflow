@@ -21,7 +21,7 @@ class NotificationStreamControllerTest {
     private final NotificationStreamController controller = new NotificationStreamController(broadcaster);
 
     private final Notification notification =
-            new Notification(UUID.randomUUID(), "Concert de jazz", 2, 41, "2 place(s) réservée(s) pour « Concert de jazz » — il en reste 41");
+            new Notification(UUID.randomUUID(), "Concert de jazz", 2, 41, "« Concert de jazz » : 2 places viennent d'être réservées. Il reste 41 places.");
 
     @Test
     void envoie_chaque_notification_comme_un_evenement_sse_reservation() {

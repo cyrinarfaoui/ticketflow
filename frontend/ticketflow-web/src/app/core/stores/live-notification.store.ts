@@ -1,11 +1,16 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { API_BASE_URL } from '../config/api.config';
 import { EVENT_SOURCE_FACTORY } from '../config/event-source';
-import { LiveNotification, StreamStatus } from '../models/live-notification';
+import { BellNotification, LiveNotification, StreamStatus } from '../models/live-notification';
+import { MyReservation } from '../models/reservation';
+import { declineLabel } from '../models/payment';
 import { EventService } from '../services/event.service';
 
 /**
- * Les notifications en direct (Server-Sent Events) : Kafka → notification-service (WebFlux) → ce store → l'interface.
+ * Les notifications de la cloche, selon le profil :
+ * - administrateur : l'activité publique en direct (Server-Sent Events : Kafka → notification-service → ce store) ;
+ * - client : le suivi de SES réservations (confirmée, refusée, expirée, annulée par l'organisateur).
+ * Le flux SSE reste ouvert pour tout le monde : il met à jour les places restantes du catalogue.
  * Les composants LISENT les signals ; seul le store les MODIFIE.
  */
 @Injectable({ providedIn: 'root' })
@@ -17,16 +22,21 @@ export class LiveNotificationStore {
   private readonly createEventSource = inject(EVENT_SOURCE_FACTORY);
   private readonly eventService = inject(EventService);
 
-  private readonly items = signal<LiveNotification[]>([]);
+  private readonly items = signal<BellNotification[]>([]);
   private readonly unread = signal(0);
   private readonly streamStatus = signal<StreamStatus>('connecting');
+  private readonly publicActivity = signal(false);
 
   readonly notifications = this.items.asReadonly();
   readonly unreadCount = this.unread.asReadonly();
   readonly status = this.streamStatus.asReadonly();
+  /** true : la cloche affiche l'activité publique (admin) ; false : le suivi des réservations (client). */
+  readonly showsPublicActivity = this.publicActivity.asReadonly();
 
   private source: EventSource | null = null;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
+  // "id:statut" déjà annoncés : un même changement n'est jamais notifié deux fois
+  private readonly announced = new Set<string>();
 
   /** Ouvre le flux (sans effet s'il est déjà ouvert). */
   connect(): void {
@@ -47,9 +57,35 @@ export class LiveNotificationStore {
     this.source = null;
   }
 
+  /** L'administrateur voit l'activité publique ; un client voit seulement ses réservations. */
+  setPublicActivity(visible: boolean): void {
+    if (visible !== this.publicActivity()) {
+      this.publicActivity.set(visible);
+      this.items.set([]);
+      this.unread.set(0);
+    }
+  }
+
+  /** Annonce au client le nouvel état de SA réservation (une seule fois par état). */
+  notifyReservation(reservation: MyReservation): void {
+    const message = reservationMessage(reservation);
+    const key = `${reservation.id}:${reservation.status}`;
+    if (!message || this.announced.has(key)) {
+      return;
+    }
+    this.announced.add(key);
+    this.add({ message });
+  }
+
   /** L'utilisateur a ouvert la liste : plus rien de "nouveau". */
   markAllRead(): void {
     this.unread.set(0);
+  }
+
+  private add(notification: BellNotification): void {
+    // La plus récente en premier, et pas plus de MAX_ITEMS
+    this.items.update((list) => [notification, ...list].slice(0, LiveNotificationStore.MAX_ITEMS));
+    this.unread.update((count) => count + 1);
   }
 
   private open(): void {
@@ -83,13 +119,40 @@ export class LiveNotificationStore {
       return;   // message illisible : on l'ignore plutôt que de casser le flux
     }
 
-    // La plus récente en premier, et pas plus de MAX_ITEMS
-    this.items.update((list) => [notification, ...list].slice(0, LiveNotificationStore.MAX_ITEMS));
-    this.unread.update((count) => count + 1);
+    if (this.publicActivity()) {
+      this.add(notification);
+    }
 
-    // Le catalogue affiché se met à jour tout seul : "41 places restantes" sans recharger la page
+    // Pour tout le monde : le catalogue affiché se met à jour tout seul, sans recharger la page
     if (notification.availableSeats !== null) {
       this.eventService.updateAvailableSeats(notification.eventId, notification.availableSeats);
     }
+  }
+}
+
+function seatsLabel(seats: number): string {
+  return seats === 1 ? '1 place' : `${seats} places`;
+}
+
+// Le message affiché au client pour chaque état de sa réservation
+function reservationMessage(reservation: MyReservation): string | null {
+  const title = `« ${reservation.eventTitle} »`;
+  switch (reservation.status) {
+    case 'PENDING':
+      return `Votre demande de réservation pour ${title} (${seatsLabel(reservation.seats)}) est en attente de paiement.`;
+    case 'CONFIRMED':
+      return `Votre réservation pour ${title} (${seatsLabel(reservation.seats)}) est confirmée. Votre billet vous a été envoyé par e-mail.`;
+    case 'EXPIRED':
+      return `Votre réservation pour ${title} a expiré : le paiement n'a pas été reçu à temps.`;
+    case 'CANCELLED':
+      if (reservation.paymentFailureCode) {
+        return `Votre réservation pour ${title} n'a pas abouti. ${declineLabel(reservation.paymentFailureCode)}.`;
+      }
+      if (reservation.eventCancelled) {
+        return `${title} a été annulé par l'organisateur. Votre réservation est annulée et le remboursement est automatique.`;
+      }
+      return `Votre réservation pour ${title} a été annulée par l'organisateur.`;
+    default:
+      return null;
   }
 }

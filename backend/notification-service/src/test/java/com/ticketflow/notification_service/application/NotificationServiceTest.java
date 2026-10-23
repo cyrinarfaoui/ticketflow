@@ -33,7 +33,7 @@ class NotificationServiceTest {
                 .assertNext(notification -> {
                     assertThat(notification.eventTitle()).isEqualTo("Concert de jazz");
                     assertThat(notification.availableSeats()).isEqualTo(41);
-                    assertThat(notification.message()).isEqualTo("2 place(s) réservée(s) pour « Concert de jazz » — il en reste 41");
+                    assertThat(notification.message()).isEqualTo("« Concert de jazz » : 2 places viennent d'être réservées. Il reste 41 places.");
                 })
                 .verifyComplete();
     }
@@ -45,7 +45,7 @@ class NotificationServiceTest {
         StepVerifier.create(service(catalog).handle(reservation))
                 .assertNext(notification -> {
                     assertThat(notification.eventTitle()).isNull();
-                    assertThat(notification.message()).isEqualTo("2 place(s) viennent d'être réservée(s)");
+                    assertThat(notification.message()).isEqualTo("2 places viennent d'être réservées.");
                 })
                 .verifyComplete();   // pas d'erreur : elle a été remplacée par le plan B
     }

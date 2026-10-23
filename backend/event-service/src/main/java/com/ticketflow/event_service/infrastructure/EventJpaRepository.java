@@ -36,9 +36,12 @@ public interface EventJpaRepository extends JpaRepository<EventEntity, UUID> {
     // Pageable ajoute ORDER BY + LIMIT/OFFSET ; Spring génère aussi la requête COUNT pour le nombre total.
     @Query("SELECT e FROM EventEntity e WHERE " +
             "(:title IS NULL OR LOWER(e.title) LIKE LOWER(CONCAT('%', CAST(:title AS string), '%'))) AND " +
-            "(:status IS NULL OR e.status = :status)")
+            "(:status IS NULL OR e.status = :status) AND " +
+            // soldOut : null = peu importe ; true = complets (0 place) ; false = il reste des places
+            "(:soldOut IS NULL OR (:soldOut = TRUE AND e.availableSeats = 0) OR (:soldOut = FALSE AND e.availableSeats > 0))")
     Page<EventEntity> searchForAdmin(@Param("title") String title,
                                      @Param("status") EventStatus status,
+                                     @Param("soldOut") Boolean soldOut,
                                      Pageable pageable);
 
     // SELECT ... FOR UPDATE : la ligne reste verrouillée jusqu'au commit de la transaction.

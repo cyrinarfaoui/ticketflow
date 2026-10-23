@@ -3,7 +3,6 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { MyReservations } from './my-reservations';
-import { DialogService } from '../../../shared/dialog/dialog.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { API_BASE_URL } from '../../../core/config/api.config';
 import { MyReservation } from '../../../core/models/reservation';
@@ -52,13 +51,6 @@ describe('MyReservations (intégration)', () => {
 
   afterEach(() => httpMock.verify());
 
-  // La fenêtre de confirmation (DialogService) : le test joue le rôle de l'utilisateur qui clique
-  async function answerDialog(confirmed: boolean): Promise<void> {
-    expect(TestBed.inject(DialogService).current()).not.toBeNull();   // la fenêtre est bien ouverte
-    TestBed.inject(DialogService).close(confirmed);
-    await fixture.whenStable();
-  }
-
   async function respond(reservations: MyReservation[]): Promise<void> {
     httpMock.expectOne(ME_URL).flush(reservations);
     await fixture.whenStable();
@@ -106,16 +98,11 @@ describe('MyReservations (intégration)', () => {
     expect(items()[0].querySelector('.status span')?.getAttribute('aria-hidden')).toBe('true');
   });
 
-  it('ne propose "Annuler" que pour les réservations en attente ou confirmées', async () => {
-    await respond([
-      reservation({ id: 'a', status: 'PENDING' }),
-      reservation({ id: 'b', status: 'CONFIRMED' }),
-      reservation({ id: 'c', status: 'CANCELLED' }),
-      reservation({ id: 'd', status: 'EXPIRED' }),
-    ]);
+  it("ne propose jamais d'annuler : seul l'organisateur annule", async () => {
+    await respond([reservation({ status: 'PENDING' }), reservation({ id: 'r2', status: 'CONFIRMED' })]);
 
-    const hasButton = items().map((item) => item.querySelector('.cancel-button') !== null);
-    expect(hasButton).toEqual([true, true, false, false]);
+    expect(element.querySelector('.cancel-button')).toBeNull();
+    expect(element.textContent).not.toContain('Annuler');
   });
 
   it("affiche le motif d'un paiement refusé", async () => {
@@ -145,55 +132,4 @@ describe('MyReservations (intégration)', () => {
     expect(element.textContent).toContain('Impossible de charger vos réservations.');
   });
 
-  describe('annulation', () => {
-
-      it('affiche "Annulée" immédiatement, avant même la réponse du serveur (optimiste)', async () => {
-      await respond([reservation()]);
-
-      element.querySelector<HTMLButtonElement>('.cancel-button')!.click();
-      await answerDialog(true);
-      fixture.detectChanges();
-
-      // La requête est partie mais n'a PAS encore répondu : l'écran est déjà à jour
-      expect(element.querySelector('.status')?.textContent).toContain('Annulée');
-      expect(element.querySelector('.cancel-button')).toBeNull();
-      httpMock.expectOne(`${API_BASE_URL}/reservations/r1/cancel`).flush({});
-    });
-
-    it('annonce le succès sans recharger toute la liste', async () => {
-      await respond([reservation()]);
-
-      element.querySelector<HTMLButtonElement>('.cancel-button')!.click();
-      await answerDialog(true);
-      httpMock.expectOne(`${API_BASE_URL}/reservations/r1/cancel`).flush({});
-      fixture.detectChanges();
-
-      expect(element.querySelector('[role="status"].success')?.textContent).toContain('a été annulée');
-      httpMock.expectNone(`${API_BASE_URL}/reservations/me`);   // pas de rechargement inutile
-    });
-    
-    it('ne fait rien si l\'utilisateur refuse la confirmation', async () => {
-      await respond([reservation()]);
-
-      element.querySelector<HTMLButtonElement>('.cancel-button')!.click();
-      await answerDialog(false);   // l'utilisateur clique "Retour"
-
-      httpMock.expectNone(`${API_BASE_URL}/reservations/r1/cancel`);
-    });
-
-    it('affiche le message métier renvoyé par l\'API (409)', async () => {
-      await respond([reservation()]);
-
-      element.querySelector<HTMLButtonElement>('.cancel-button')!.click();
-      await answerDialog(true);
-      httpMock
-        .expectOne(`${API_BASE_URL}/reservations/r1/cancel`)
-        .flush({ error: 'Cette réservation est déjà annulée' }, { status: 409, statusText: 'Conflict' });
-      await fixture.whenStable();
-      fixture.detectChanges();
-
-      expect(element.querySelector('[role="alert"]')?.textContent).toContain('Cette réservation est déjà annulée');
-      expect(element.querySelector('.status')?.textContent).toContain('En attente');   // retour en arrière
-    });
-  });
 });

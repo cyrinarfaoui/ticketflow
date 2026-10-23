@@ -1,15 +1,19 @@
 .hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
   margin-bottom: 2.5rem;
   padding: 2.5rem 2rem;
-  border: 1px solid #dbeafe;
+  border: 1px solid var(--color-brand-soft);
   border-radius: 16px;
-  background-color: #eff6ff;
+  background-color: var(--color-brand-bg);
 
   h1 {
     margin: 0 0 0.5rem;
     font-size: 2.25rem;
     line-height: 1.2;
-    color: #0f172a;
+    color: var(--color-brand-navy);
   }
 }
 
@@ -23,7 +27,7 @@
   margin: 0 0 1rem;
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1e3a8a;
+  color: var(--color-brand-navy);
 }
 
 .hero__actions {
@@ -55,27 +59,133 @@
 
   &--secondary {
     background-color: #ffffff;
-    color: #1d4ed8;
+    color: var(--color-primary-dark);
     border: 2px solid var(--color-primary);
 
     &:hover {
-      background-color: #dbeafe;
+      background-color: var(--color-brand-soft);
     }
   }
 
   &:focus-visible {
-    outline: 3px solid #93c5fd;
+    outline: 3px solid var(--color-brand-sky);
     outline-offset: 2px;
   }
 }
 
 .hero__link {
-  color: #1d4ed8;
+  color: var(--color-primary-dark);
   font-weight: 500;
 
   &:focus-visible {
-    outline: 3px solid #93c5fd;
+    outline: 3px solid var(--color-brand-sky);
     outline-offset: 2px;
+  }
+}
+
+// ---------- Illustration : un billet (partie principale + talon détachable avec QR code) ----------
+.ticket {
+  display: flex;
+  flex-shrink: 0;
+  margin-right: 1.5rem;
+  transform: rotate(-4deg);
+  filter: drop-shadow(0 12px 24px rgba(15, 23, 42, 0.18));
+}
+
+.ticket__main,
+.ticket__stub {
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 1.5rem;
+  color: #ffffff;
+}
+
+.ticket__main {
+  gap: 0.35rem;
+  width: 15rem;
+  border-radius: 14px 0 0 14px;
+  background-color: var(--color-brand-navy);
+}
+
+// Talon : séparé par des pointillés, avec deux encoches (les demi-cercles) comme un vrai billet
+.ticket__stub {
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  border-left: 2px dashed rgba(255, 255, 255, 0.6);
+  border-radius: 0 14px 14px 0;
+  background-color: var(--color-brand-green);
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    left: -0.6rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 50%;
+    background-color: var(--color-brand-bg);   // même couleur que la bannière : effet « encoche »
+  }
+
+  &::before {
+    top: -0.55rem;
+  }
+
+  &::after {
+    bottom: -0.55rem;
+  }
+}
+
+.ticket__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-brand-sky);
+}
+
+.ticket__title {
+  margin-bottom: 0.4rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.ticket__info {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: #d1d5db;
+
+  .icon {
+    font-size: 1.1rem;
+  }
+}
+
+.ticket__seat {
+  align-self: flex-start;
+  margin-top: 0.6rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.15);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.ticket__qr {
+  font-size: 4rem;
+}
+
+.ticket__brand {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+// Tablette et téléphone : l'illustration est masquée, le texte prend toute la largeur
+@media (max-width: 900px) {
+  .ticket {
+    display: none;
   }
 }
 

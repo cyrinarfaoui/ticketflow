@@ -145,18 +145,13 @@ public class ReservationService {
     }
 
     /**
-     * Annule une réservation.
-     * Seul son propriétaire peut le faire, ou un administrateur (dashboard).
-     * La vérification est faite ICI, côté serveur : cacher le bouton dans le frontend ne protège rien.
+     * Annule une réservation : administrateur uniquement (règle de SecurityConfig sur POST /reservations/{id}/cancel).
+     * Un client ne peut pas annuler son billet : seul l'organisateur annule, et rembourse si le billet était payé.
      */
     @Transactional
-    public Reservation cancelReservation(UUID reservationId, String userId, boolean admin) {
+    public Reservation cancelReservation(UUID reservationId) {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new NoSuchElementException("Réservation introuvable : " + reservationId));
-
-        if (!admin && !reservation.isOwnedBy(userId)) {
-            throw new ReservationAccessDeniedException("Vous ne pouvez annuler que vos propres réservations");
-        }
 
         boolean paid = reservation.isConfirmed();
         reservation.cancel();

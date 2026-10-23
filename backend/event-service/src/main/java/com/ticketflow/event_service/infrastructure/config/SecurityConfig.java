@@ -41,7 +41,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/events/*/book", "/events/*/close", "/events/*/cancel").hasRole("ADMIN")
                         // Lister toutes les réservations et les statistiques : réservé à l'admin (dashboard)
                         .requestMatchers(HttpMethod.GET, "/reservations", "/reservations/stats").hasRole("ADMIN")
-                        // Réserver / annuler : tout utilisateur connecté
+                        // Annuler une réservation : l'organisateur seulement (un client ne peut pas annuler un billet)
+                        .requestMatchers(HttpMethod.POST, "/reservations/*/cancel").hasRole("ADMIN")
+                        // Réserver, voir ses réservations : tout utilisateur connecté
                         .requestMatchers("/reservations/**").authenticated()
                         .anyRequest().authenticated()
                 )

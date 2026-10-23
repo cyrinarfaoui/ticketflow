@@ -46,8 +46,8 @@
   min-width: 3.25rem;
   padding: 0.4rem 0;
   border-radius: 10px;
-  background-color: #dbeafe;
-  color: #1e3a8a;
+  background-color: var(--color-brand-soft);
+  color: var(--color-brand-navy);
   line-height: 1.1;
 }
 
@@ -214,7 +214,7 @@
   input:focus-visible,
   select:focus-visible,
   button:focus-visible {
-    outline: 3px solid #93c5fd;
+    outline: 3px solid var(--color-brand-sky);
     outline-offset: 2px;
   }
 }

@@ -149,8 +149,8 @@
   }
 
   &.is-selected {
-    border-color: var(--color-primary, #2563eb);
-    background-color: #eff6ff;
+    border-color: var(--color-primary, var(--color-primary));
+    background-color: var(--color-brand-bg);
   }
 }
 
@@ -185,6 +185,11 @@
   &[data-status='CANCELLED'] {
     background-color: #fee2e2;
     color: #991b1b;
+  }
+
+  &[data-status='FULL'] {
+    background-color: #fef3c7;
+    color: #92400e;
   }
 }
 
@@ -244,6 +249,28 @@ form {
   }
 }
 
+.field {
+  display: grid;
+  align-content: start;
+  gap: 0.25rem;
+}
+
+// L'erreur d'un champ, juste en dessous (texte + couleur : l'information ne repose pas sur la couleur seule)
+.field-error {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+.required {
+  color: #b91c1c;
+}
+
+.required-legend {
+  margin-bottom: 0.25rem;
+}
+
 .fields__full {
   grid-column: 1 / -1;   // la description prend les deux colonnes
 }
@@ -283,7 +310,7 @@ form {
   padding: 0.55rem 1rem;
   border: none;
   border-radius: 8px;
-  background-color: var(--color-primary, #2563eb);
+  background-color: var(--color-primary, var(--color-primary));
   color: #ffffff;
   font: inherit;
   font-weight: 600;
@@ -298,7 +325,7 @@ form {
 
 .actions .primary-button {
   border: none;
-  background-color: var(--color-primary, #2563eb);
+  background-color: var(--color-primary, var(--color-primary));
   color: #ffffff;
 }
 
@@ -324,7 +351,7 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid #93c5fd;
+  outline: 3px solid var(--color-brand-sky);
   outline-offset: 2px;
 }
 
@@ -355,7 +382,7 @@ textarea:focus-visible {
 
 .empty-state__icon {
   font-size: 3rem;
-  color: #93c5fd;
+  color: var(--color-brand-sky);
 }
 
 // Ligne de liste compacte : titre à gauche, statut à droite

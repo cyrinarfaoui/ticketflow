@@ -11,7 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,12 +37,10 @@ public class ReservationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ReservationResponse.from(reservation));
     }
 
+    // Réservé à l'administrateur : la règle est dans SecurityConfig (un client reçoit 403)
     @PostMapping("/{id}/cancel")
-    public ReservationResponse cancelReservation(@PathVariable UUID id, JwtAuthenticationToken authentication) {
-        // JwtAuthenticationToken : le jeton vérifié (getName() = "sub") + les rôles calculés par SecurityConfig
-        boolean admin = authentication.getAuthorities().stream()
-                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
-        return ReservationResponse.from(reservationService.cancelReservation(id, authentication.getName(), admin));
+    public ReservationResponse cancelReservation(@PathVariable UUID id) {
+        return ReservationResponse.from(reservationService.cancelReservation(id));
     }
 
     @GetMapping

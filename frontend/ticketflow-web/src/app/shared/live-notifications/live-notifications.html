@@ -6,7 +6,7 @@
     [attr.aria-expanded]="expanded()"
     (click)="toggle()"
   >
-    <span aria-hidden="true">🔔</span>
+    <span class="icon bell-icon" aria-hidden="true">notifications</span>
     <span class="visually-hidden">Activité en direct</span>
     @if (store.unreadCount() > 0) {
       <span class="bell-badge">
@@ -21,7 +21,7 @@
 
   @if (expanded()) {
     <section id="live-panel" class="live-panel" aria-labelledby="live-panel-title">
-      <h2 id="live-panel-title">Activité en direct</h2>
+      <h2 id="live-panel-title">{{ store.showsPublicActivity() ? 'Activité en direct' : 'Mes notifications' }}</h2>
       @if (store.notifications().length > 0) {
         <ul>
           @for (notification of store.notifications(); track $index) {
@@ -29,7 +29,7 @@
           }
         </ul>
       } @else {
-        <p class="live-empty">Aucune activité pour le moment.</p>
+        <p class="live-empty">{{ store.showsPublicActivity() ? 'Aucune activité pour le moment.' : 'Aucune notification pour le moment.' }}</p>
       }
     </section>
   }

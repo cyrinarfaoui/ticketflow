@@ -1,6 +1,11 @@
 :root {
-  --color-primary: #2563eb;
-  --color-primary-dark: #1d4ed8;
+  --color-primary: #0e7c5f;        // vert Speegar foncé : contraste 5,2:1 avec le blanc (RGAA)
+  --color-brand-navy: #2e526d;     // marine Speegar : en-tête, titres
+  --color-brand-green: #15b788;    // vert Speegar : accents, barres
+  --color-brand-sky: #43c6eb;      // cyan clair : contour de focus
+  --color-brand-soft: #e3f6ef;     // fond vert très clair
+  --color-brand-bg: #f0faf6;       // fond de bannière
+  --color-primary-dark: #0b6e54;
   --color-text: #1f2937;
   --color-border: #d1d5db;
   --color-error: #dc2626;
@@ -79,7 +84,7 @@ main {
 
 // Focus TOUJOURS visible au clavier, sur toute l'application (critère RGAA 10.7)
 :focus-visible {
-  outline: 3px solid #93c5fd;
+  outline: 3px solid var(--color-brand-sky);
   outline-offset: 2px;
 }
 

@@ -3,7 +3,7 @@
   box-sizing: border-box;
   padding: 1.5rem;
   border: none;
-  border-top: 5px solid var(--color-primary, #2563eb);
+  border-top: 5px solid var(--color-primary, var(--color-primary));
   border-radius: 14px;
   box-shadow: 0 24px 64px rgba(15, 23, 42, 0.3);
   color: #111827;
@@ -55,12 +55,12 @@
 
   .primary {
     border: none;
-    background-color: var(--color-primary, #2563eb);
+    background-color: var(--color-primary, var(--color-primary));
     color: #ffffff;
   }
 
   button:focus-visible {
-    outline: 3px solid #93c5fd;
+    outline: 3px solid var(--color-brand-sky);
     outline-offset: 2px;
   }
 }

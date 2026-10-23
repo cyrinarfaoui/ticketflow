@@ -4,7 +4,7 @@ import { registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { API_BASE_URL } from '../../../core/config/api.config';
 import { MyReservation } from '../../../core/models/reservation';
 import { EventResponse } from '../../../core/services/event.service';
@@ -155,6 +155,19 @@ describe('PaymentDialog', () => {
     fixture.detectChanges();
 
     expect(element.querySelector('[role="alert"]')?.textContent).toContain('Pas assez de places disponibles');
+  });
+
+  it('"Voir mes réservations" ferme la fenêtre et ouvre la page Mes réservations', () => {
+    const navigate = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
+    fillCard('4242 4242 4242 4242');
+    submit();
+    httpMock.expectOne(`${API_BASE_URL}/reservations?eventId=e1`).flush({ id: 'r1', eventId: 'e1', seats: 2, status: 'PENDING' });
+    bankAnswers({ status: 'CONFIRMED' });
+
+    element.querySelector<HTMLAnchorElement>('.state--success a')!.click();
+
+    expect(navigate).toHaveBeenCalledWith('/mes-reservations');
+    expect(element.querySelector<HTMLDialogElement>('dialog')!.open).toBeFalse();
   });
 
   it('prévient le parent qu\'une réservation a été créée quand on ferme après paiement', async () => {

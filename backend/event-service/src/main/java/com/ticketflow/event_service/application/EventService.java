@@ -63,9 +63,9 @@ public class EventService {
     }
 
     // Back-office : un titre vide ("") veut dire "pas de filtre" (null pour la requête)
-    public Page<Event> listForAdmin(String title, EventStatus status, Pageable pageable) {
+    public Page<Event> listForAdmin(String title, EventStatus status, Boolean soldOut, Pageable pageable) {
         String titleFilter = (title == null || title.isBlank()) ? null : title.trim();
-        return eventRepository.searchForAdmin(titleFilter, status, pageable);
+        return eventRepository.searchForAdmin(titleFilter, status, soldOut, pageable);
     }
 
     public Event getEvent(UUID id) {

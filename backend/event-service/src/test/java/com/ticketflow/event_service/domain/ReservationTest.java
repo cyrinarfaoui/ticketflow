@@ -69,8 +69,6 @@ class ReservationTest {
         Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), "user-1", 2);
 
         assertThat(reservation.getUserId()).isEqualTo("user-1");
-        assertThat(reservation.isOwnedBy("user-1")).isTrue();
-        assertThat(reservation.isOwnedBy("user-2")).isFalse();
     }
 
     @Test

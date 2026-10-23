@@ -1,6 +1,5 @@
 package com.ticketflow.event_service.infrastructure.web;
 
-import com.ticketflow.event_service.application.ReservationAccessDeniedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -32,11 +31,6 @@ public class GlobalExceptionHandler {
                 .map(error -> error.getDefaultMessage())
                 .orElse("Données invalides");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", message));
-    }
-
-    @ExceptionHandler(ReservationAccessDeniedException.class)
-    public ResponseEntity<Map<String, String>> handleAccessDenied(ReservationAccessDeniedException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(NoSuchElementException.class)

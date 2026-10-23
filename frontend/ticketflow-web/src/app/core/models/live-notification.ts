@@ -8,5 +8,10 @@ export interface LiveNotification {
   message: string;                  // texte prêt à afficher
 }
 
+// Une ligne de la cloche : activité publique (LiveNotification) ou suivi d'une réservation du client
+export interface BellNotification {
+  message: string;
+}
+
 // État de la connexion au flux, affiché discrètement dans l'en-tête
 export type StreamStatus = 'connecting' | 'open' | 'reconnecting';

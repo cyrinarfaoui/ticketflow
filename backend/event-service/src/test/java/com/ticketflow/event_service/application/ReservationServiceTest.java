@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.never;
@@ -92,43 +91,17 @@ class ReservationServiceTest {
     }
 
     @Test
-    void le_proprietaire_peut_annuler_sa_reservation() {
+    void l_administrateur_annule_une_reservation_et_les_places_sont_rendues() {
         Event concert = event("Concert");
         concert.book(2);
         Reservation reservation = new Reservation(UUID.randomUUID(), concert.getId(), "user-1", 2);
         when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
         when(eventRepository.findByIdForUpdate(concert.getId())).thenReturn(Optional.of(concert));
 
-        Reservation cancelled = service.cancelReservation(reservation.getId(), "user-1", false);
+        Reservation cancelled = service.cancelReservation(reservation.getId());
 
         assertThat(cancelled.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
         assertThat(concert.getAvailableSeats()).isEqualTo(100); // les 2 places sont rendues
-    }
-
-    @Test
-    void un_autre_utilisateur_ne_peut_pas_annuler_la_reservation() {
-        Reservation reservation = new Reservation(UUID.randomUUID(), UUID.randomUUID(), "user-1", 2);
-        when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
-
-        assertThatThrownBy(() -> service.cancelReservation(reservation.getId(), "pirate", false))
-                .isInstanceOf(ReservationAccessDeniedException.class);
-
-        // Rien n'a bougé : ni la réservation, ni les places de l'événement
-        assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.PENDING);
-        verify(reservationRepository, never()).save(any());
-        verifyNoInteractions(eventRepository);
-    }
-
-    @Test
-    void un_administrateur_peut_annuler_la_reservation_de_n_importe_qui() {
-        Event concert = event("Concert");
-        Reservation reservation = new Reservation(UUID.randomUUID(), concert.getId(), "user-1", 1);
-        when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
-        when(eventRepository.findByIdForUpdate(concert.getId())).thenReturn(Optional.of(concert));
-
-        Reservation cancelled = service.cancelReservation(reservation.getId(), "admin-42", true);
-
-        assertThat(cancelled.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
     }
 
     private static Event event(String title) {
@@ -198,7 +171,7 @@ class ReservationServiceTest {
         when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
         when(eventRepository.findByIdForUpdate(concert.getId())).thenReturn(Optional.of(concert));
 
-        service.cancelReservation(reservation.getId(), "user-1", false);
+        service.cancelReservation(reservation.getId());
 
         verify(eventPublisher).publishRefundRequested(reservation);
     }
@@ -212,7 +185,7 @@ class ReservationServiceTest {
         when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
         when(eventRepository.findByIdForUpdate(concert.getId())).thenReturn(Optional.of(concert));
 
-        service.cancelReservation(reservation.getId(), "user-1", false);
+        service.cancelReservation(reservation.getId());
 
         verify(eventPublisher, never()).publishRefundRequested(any());
     }

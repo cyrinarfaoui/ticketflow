@@ -44,10 +44,6 @@ public class Reservation {
         this.userEmail = email;
     }
 
-    public boolean isOwnedBy(String userId) {
-        return this.userId != null && this.userId.equals(userId);
-    }
-
     public void confirm() {
         if (status == ReservationStatus.CANCELLED) {
             throw new IllegalStateException("Impossible de confirmer une réservation annulée");
