@@ -175,10 +175,10 @@ class EventServiceTest {
     @Test
     void liste_admin_un_titre_vide_veut_dire_pas_de_filtre() {
         var pageable = org.springframework.data.domain.PageRequest.of(0, 10);
-        when(eventRepository.searchForAdmin(null, null, pageable)).thenReturn(org.springframework.data.domain.Page.empty());
+        when(eventRepository.searchForAdmin(null, null, null, pageable)).thenReturn(org.springframework.data.domain.Page.empty());
 
-        service.listForAdmin("   ", null, pageable);
+        service.listForAdmin("   ", null, null, pageable);
 
-        verify(eventRepository).searchForAdmin(null, null, pageable);
+        verify(eventRepository).searchForAdmin(null, null, null, pageable);
     }
 }

@@ -91,7 +91,7 @@ form {
     }
 
     &:focus-visible {
-      outline: 3px solid #93c5fd;
+      outline: 3px solid var(--color-brand-sky);
       outline-offset: 1px;
     }
   }
@@ -112,14 +112,14 @@ form {
   padding: 0.75rem 1rem;
   border: none;
   border-radius: 8px;
-  background-color: var(--color-primary, #2563eb);
+  background-color: var(--color-primary, var(--color-primary));
   color: #ffffff;
   font: inherit;
   font-weight: 700;
   cursor: pointer;
 
   &:hover {
-    background-color: var(--color-primary-dark, #1d4ed8);
+    background-color: var(--color-primary-dark, var(--color-primary-dark));
   }
 }
 
@@ -137,7 +137,7 @@ form {
 .pay-button:focus-visible,
 .link-button:focus-visible,
 summary:focus-visible {
-  outline: 3px solid #93c5fd;
+  outline: 3px solid var(--color-brand-sky);
   outline-offset: 2px;
 }
 

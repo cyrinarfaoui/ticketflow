@@ -4,13 +4,6 @@
     <p class="intro">Bonjour {{ username() }}, voici l'historique de vos réservations.</p>
   }
 
-  <!-- Toujours présent dans la page, pour que les lecteurs d'écran annoncent le message quand il apparaît -->
-  <p class="success" role="status">{{ successMessage() }}</p>
-
-  @if (errorMessage()) {
-    <p class="error" role="alert">{{ errorMessage() }}</p>
-  }
-
   @if (store.status() === 'loading' && store.reservations().length === 0) {
     <p role="status">Chargement de vos réservations…</p>
   } @else if (store.status() === 'error') {
@@ -45,11 +38,6 @@
                   <p class="payment-failure">Événement annulé par l'organisateur</p>
                 } @else if (reservation.paymentFailureCode) {
                   <p class="payment-failure">{{ declineLabel(reservation.paymentFailureCode) }}</p>
-                }
-                @if (canCancel(reservation)) {
-                  <button type="button" class="cancel-button" (click)="cancel(reservation)">
-                    Annuler<span class="visually-hidden"> la réservation pour {{ reservation.eventTitle }}</span>
-                  </button>
                 }
               </div>
             </article>

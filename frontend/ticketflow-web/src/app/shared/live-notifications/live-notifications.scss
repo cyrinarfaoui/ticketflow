@@ -5,36 +5,46 @@
   gap: 0.5rem;
 }
 
+// Cloche : bouton rond discret, comme sur les applications professionnelles
 .bell {
   position: relative;
-  padding: 0.35rem 0.6rem;
-  border: 1px solid #4b5563;
-  border-radius: 8px;
-  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.1);
   color: #ffffff;
-  font: inherit;
-  font-size: 1.1rem;
   cursor: pointer;
+  transition: background-color 0.15s;
 
   &:hover {
-    background-color: #374151;
+    background-color: rgba(255, 255, 255, 0.2);
   }
 
   &:focus-visible {
-    outline: 3px solid #93c5fd;
+    outline: 3px solid var(--color-brand-sky);
     outline-offset: 3px;
   }
 }
 
+.bell-icon {
+  font-size: 1.4rem;
+}
+
 .bell-badge {
   position: absolute;
-  top: -0.45rem;
-  right: -0.45rem;
-  min-width: 1.3rem;
-  padding: 0.05rem 0.35rem;
+  top: -0.2rem;
+  right: -0.2rem;
+  min-width: 1.2rem;
+  padding: 0.05rem 0.3rem;
+  border: 2px solid var(--color-brand-navy);   // détache la pastille du fond de l'en-tête
   border-radius: 999px;
-  background-color: #f59e0b;
-  color: #111827;
+  background-color: var(--color-brand-green);
+  color: #0f172a;
   font-size: 0.75rem;
   font-weight: 700;
   text-align: center;

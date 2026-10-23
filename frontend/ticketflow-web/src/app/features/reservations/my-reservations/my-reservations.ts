@@ -1,11 +1,9 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ReservationStore } from '../../../core/stores/reservation.store';
-import { MyReservation, ReservationStatus } from '../../../core/models/reservation';
-import { DialogService } from '../../../shared/dialog/dialog.service';
+import { ReservationStatus } from '../../../core/models/reservation';
 import { declineLabel } from '../../../core/models/payment';
 
 // Chaque statut a un libellé ET une icône : l'information ne repose jamais sur la couleur seule (RGAA)
@@ -25,7 +23,6 @@ const STATUS_DISPLAY: Record<ReservationStatus, { label: string; icon: string }>
 export class MyReservations implements OnInit {
 
   private readonly authService = inject(AuthService);
-  private readonly dialog = inject(DialogService);
 
   // Lu dans le JWT, côté navigateur : UNIQUEMENT pour l'affichage.
   // Le jeton peut être lu (et même modifié) par l'utilisateur : le backend ne fait confiance qu'à sa signature.
@@ -33,11 +30,6 @@ export class MyReservations implements OnInit {
 
   // La même copie des réservations que le header et le reste de l'application
   protected readonly store = inject(ReservationStore);
-
-  // Message d'erreur métier (409…) ; les erreurs techniques (401, 403, 5xx) sont dans la bannière globale
-  readonly errorMessage = signal<string | null>(null);
-  // Confirmation annoncée par les lecteurs d'écran (role="status")
-  readonly successMessage = signal<string | null>(null);
 
   ngOnInit(): void {
     this.store.load(); // données fraîches à l'ouverture de la page
@@ -47,30 +39,5 @@ export class MyReservations implements OnInit {
 
   statusDisplay(status: ReservationStatus) {
     return STATUS_DISPLAY[status];
-  }
-
-  canCancel(reservation: MyReservation): boolean {
-    return reservation.status === 'PENDING' || reservation.status === 'CONFIRMED';
-  }
-
-  async cancel(reservation: MyReservation): Promise<void> {
-    const confirmed = await this.dialog.confirm({
-      title: 'Annuler ma réservation',
-      message: `Votre réservation de ${reservation.seats} place(s) pour « ${reservation.eventTitle} » sera annulée.`,
-      confirmLabel: 'Annuler la réservation',
-      tone: 'danger',
-    });
-    if (!confirmed) {
-      return;
-    }
-    this.errorMessage.set(null);
-    this.successMessage.set(null);
-
-    this.store.cancel(reservation.id).subscribe({
-      // Plus de reload : le store a déjà mis l'écran à jour (optimiste)
-      next: () => this.successMessage.set(`Votre réservation pour « ${reservation.eventTitle} » a été annulée.`),
-      // Le store a déjà fait le rollback ; on explique pourquoi
-      error: (err: HttpErrorResponse) => this.errorMessage.set(err.error?.error ?? null),
-    });
   }
 }

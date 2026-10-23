@@ -32,7 +32,7 @@
   }
 
   &:focus-visible {
-    outline: 3px solid #93c5fd;
+    outline: 3px solid var(--color-brand-sky);
     outline-offset: 2px;
   }
 }

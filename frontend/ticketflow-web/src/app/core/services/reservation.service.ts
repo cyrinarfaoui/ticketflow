@@ -44,9 +44,4 @@ export class ReservationService {
       timeout(ReservationService.RESULT_TIMEOUT_MS),    // au-delà, on n'attend plus (le résultat viendra dans "Mes réservations")
     );
   }
-
-  // Le backend vérifie que la réservation appartient bien à l'utilisateur du jeton (sinon 403)
-  cancelReservation(id: string): Observable<ReservationResponse> {
-    return this.http.post<ReservationResponse>(`${API_BASE_URL}/reservations/${id}/cancel`, null);
-  }
 }

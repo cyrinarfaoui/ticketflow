@@ -1,9 +1,8 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
 import { API_BASE_URL } from '../config/api.config';
 import { MyReservation } from '../models/reservation';
-import { ReservationResponse, ReservationService } from '../services/reservation.service';
+import { LiveNotificationStore } from './live-notification.store';
 
 export type LoadStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
@@ -15,7 +14,7 @@ export type LoadStatus = 'idle' | 'loading' | 'loaded' | 'error';
 export class ReservationStore {
 
   private readonly http = inject(HttpClient);
-  private readonly reservationService = inject(ReservationService);
+  private readonly notifications = inject(LiveNotificationStore);
 
   // État privé et modifiable…
   private readonly state = signal<MyReservation[]>([]);
@@ -31,9 +30,17 @@ export class ReservationStore {
   );
 
   load(): void {
+    // La photo d'avant : une réservation qui a changé d'état depuis (expirée, annulée par l'organisateur…) est annoncée
+    const previous = new Map(this.state().map((r) => [r.id, r.status]));
     this.loadStatus.set('loading');
     this.http.get<MyReservation[]>(`${API_BASE_URL}/reservations/me`).subscribe({
       next: (reservations) => {
+        for (const reservation of reservations) {
+          const before = previous.get(reservation.id);
+          if (before && before !== reservation.status) {
+            this.notifications.notifyReservation(reservation);
+          }
+        }
         this.state.set(reservations);
         this.loadStatus.set('loaded');
       },
@@ -41,24 +48,8 @@ export class ReservationStore {
     });
   }
 
-  /**
-   * Annulation optimiste : l'écran change tout de suite, puis on revient en arrière si le serveur refuse.
-   * Renvoie l'Observable pour que le composant puisse afficher un message (succès ou erreur).
-   */
-  cancel(id: string): Observable<ReservationResponse> {
-    const previous = this.state();   // la photo d'avant, pour le rollback
-
-    this.state.update((reservations) =>
-      reservations.map((r) => (r.id === id ? { ...r, status: 'CANCELLED' as const } : r)),
-    );
-
-    return this.reservationService.cancelReservation(id).pipe(
-      tap({ error: () => this.state.set(previous) }),
-    );
-  }
-
   clear(): void {
     this.state.set([]);
     this.loadStatus.set('idle');
   }
-}
+}

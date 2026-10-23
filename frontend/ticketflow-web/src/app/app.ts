@@ -29,6 +29,9 @@ export class App {
       const loggedIn = this.authService.isLoggedIn();
       untracked(() => (loggedIn ? this.reservationStore.load() : this.reservationStore.clear()));
     });
+
+    // La cloche : activité publique pour l'administrateur, suivi de ses réservations pour le client
+    effect(() => this.liveNotifications.setPublicActivity(this.authService.isAdmin()));
   }
 
   // Avec le routeur Angular, un simple href="#contenu" changerait de page : on déplace le focus nous-mêmes

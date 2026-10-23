@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { API_BASE_URL } from '../config/api.config';
 import { EVENT_SOURCE_FACTORY } from '../config/event-source';
 import { LiveNotification } from '../models/live-notification';
+import { MyReservation } from '../models/reservation';
 import { EventService } from '../services/event.service';
 import { LiveNotificationStore } from './live-notification.store';
 
@@ -72,6 +73,7 @@ describe('LiveNotificationStore', () => {
       ],
     });
     store = TestBed.inject(LiveNotificationStore);
+    store.setPublicActivity(true);   // par défaut : profil admin, qui voit l'activité publique
   });
 
   afterEach(() => store.disconnect());
@@ -132,6 +134,52 @@ describe('LiveNotificationStore', () => {
     lastSource().simulateMessage('reservation', JSON.stringify(notification({ eventId: 'e7', availableSeats: 12 })));
 
     expect(eventService.updateAvailableSeats).toHaveBeenCalledOnceWith('e7', 12);
+  });
+
+  it("client : n'affiche pas l'activité publique mais met quand même le catalogue à jour", () => {
+    store.setPublicActivity(false);
+    store.connect();
+    lastSource().simulateMessage('reservation', JSON.stringify(notification({ eventId: 'e1', availableSeats: 46 })));
+
+    expect(store.notifications()).toEqual([]);
+    expect(eventService.updateAvailableSeats).toHaveBeenCalledWith('e1', 46);
+  });
+
+  describe('suivi des réservations du client', () => {
+    const mine = (overrides: Partial<MyReservation>): MyReservation => ({
+      id: 'r1', eventId: 'e1', eventTitle: 'Festival', eventLocation: null, eventDate: null, seats: 4,
+      status: 'CONFIRMED', createdAt: '2026-10-22T10:00:00Z', paymentFailureCode: null, eventCancelled: false, ...overrides,
+    });
+
+    beforeEach(() => store.setPublicActivity(false));
+
+    it('annonce une réservation confirmée', () => {
+      store.notifyReservation(mine({}));
+
+      expect(store.notifications()[0].message)
+        .toBe('Votre réservation pour « Festival » (4 places) est confirmée. Votre billet vous a été envoyé par e-mail.');
+      expect(store.unreadCount()).toBe(1);
+    });
+
+    it('annonce un paiement refusé avec son motif', () => {
+      store.notifyReservation(mine({ status: 'CANCELLED', paymentFailureCode: 'insufficient_funds' }));
+
+      expect(store.notifications()[0].message).toContain('n\x27a pas abouti. Paiement refusé : fonds insuffisants');
+    });
+
+    it("annonce l'annulation de l'événement et le remboursement", () => {
+      store.notifyReservation(mine({ status: 'CANCELLED', eventCancelled: true }));
+
+      expect(store.notifications()[0].message).toContain('annulé par l\x27organisateur');
+      expect(store.notifications()[0].message).toContain('remboursement est automatique');
+    });
+
+    it('n\x27annonce jamais deux fois le même état', () => {
+      store.notifyReservation(mine({}));
+      store.notifyReservation(mine({}));
+
+      expect(store.notifications().length).toBe(1);
+    });
   });
 
   it('ne touche pas au catalogue quand le nombre de places est inconnu (notification simple)', () => {

@@ -30,7 +30,7 @@ kubectl get pods -n ticketflow -w    # attendre 1/1 partout
 
 | URL | |
 |---|---|
-| http://localhost:4200 | Application |
+| http://ticketflow.localhost | Application (port 80 ; `*.localhost` est résolu par le navigateur) |
 | http://localhost:8000/api | API (gateway) |
 | http://localhost:8081 | Keycloak |
 | http://localhost:8025 | Mailpit |

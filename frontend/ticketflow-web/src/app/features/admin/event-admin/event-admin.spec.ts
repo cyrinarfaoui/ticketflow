@@ -92,6 +92,45 @@ describe('EventAdmin (back-office)', () => {
     request.flush(page([FESTIVAL]));
   });
 
+  it('un clic ailleurs dans la page referme le détail de l\x27événement choisi', async () => {
+    await load(page([JAZZ]));
+    selectFirst();
+    expect(element.querySelector('.list-item.is-selected')).not.toBeNull();
+
+    element.querySelector<HTMLElement>('.event-admin__header h1')!.click();
+    fixture.detectChanges();
+
+    expect(element.querySelector('.list-item.is-selected')).toBeNull();
+    expect(element.querySelector('.empty-state')).not.toBeNull();
+  });
+
+  it('un clic ailleurs ne referme pas le détail si des modifications ne sont pas enregistrées', async () => {
+    await load(page([JAZZ]));
+    selectFirst();
+    const title = element.querySelector<HTMLInputElement>('input[formControlName="title"]')!;
+    title.value = 'Concert modifié';
+    title.dispatchEvent(new Event('input'));
+
+    element.querySelector<HTMLElement>('.event-admin__header h1')!.click();
+    fixture.detectChanges();
+
+    expect(element.querySelector('.list-item.is-selected')).not.toBeNull();
+  });
+
+  it('le filtre « Complets » demande les événements ouverts sans place restante', async () => {
+    await load();
+
+    const select = element.querySelector<HTMLSelectElement>('.filters select')!;
+    select.value = 'FULL';
+    select.dispatchEvent(new Event('change'));
+    TestBed.tick();
+
+    const request = listRequest();
+    expect(request.request.params.get('status')).toBe('OPEN');
+    expect(request.request.params.get('soldOut')).toBe('true');
+    request.flush(page([{ ...JAZZ, availableSeats: 0 }]));
+  });
+
   it('un clic sur un événement remplit le formulaire (prix en TND)', async () => {
     await load();
     selectFirst();
@@ -190,6 +229,23 @@ describe('EventAdmin (back-office)', () => {
     expect(element.querySelector('.actions')?.textContent).not.toContain('Supprimer');
   });
 
+  it('affiche chaque erreur sous SON champ, et marque les champs obligatoires d\'un *', async () => {
+    await load();
+    clickNewEvent();
+    type('input[formControlName="title"]', 'Jazz');
+
+    [...element.querySelectorAll<HTMLButtonElement>('.actions button')]
+      .find((b) => b.textContent?.includes("Créer l'événement"))!.click();
+    fixture.detectChanges();
+
+    expect(element.querySelector('#event-location-error')?.textContent).toContain('Le lieu est obligatoire.');
+    expect(element.querySelector('#event-category-error')?.textContent).toContain('Choisissez une catégorie.');
+    expect(element.querySelector('#event-title-error')).toBeNull();   // le titre est valide : pas de message
+    expect(element.querySelector('#event-location')?.getAttribute('aria-describedby')).toBe('event-location-error');
+    expect(element.querySelector('label[for="event-location"] .required')?.textContent).toBe('*');
+    httpMock.expectNone(`${API_BASE_URL}/events`);
+  });
+
   it('crée avec POST, puis ferme le formulaire en gardant le message de succès', async () => {
     await load();
     clickNewEvent();
@@ -225,6 +281,12 @@ describe('EventAdmin (back-office)', () => {
 
     expect(element.querySelector('.empty-state')).not.toBeNull();
     httpMock.expectNone(`${API_BASE_URL}/events`);
+  });
+
+  it('un événement ouvert sans place restante affiche le badge « Complet »', async () => {
+    await load(page([{ ...JAZZ, availableSeats: 0 }]));
+
+    expect(element.querySelector('.list-item .badge')?.textContent).toContain('Complet');
   });
 
   it('un événement passé est en lecture seule, avec le badge « Passé »', async () => {

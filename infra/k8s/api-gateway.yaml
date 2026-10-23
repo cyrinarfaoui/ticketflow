@@ -11,7 +11,7 @@ data:
   NOTIFICATION_SERVICE_URL: http://notification-service:8083
   SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8081/realms/ticketflow
   SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/ticketflow/protocol/openid-connect/certs
-  APP_CORS_ALLOWED_ORIGIN: http://localhost:4200
+  APP_CORS_ALLOWED_ORIGIN: http://ticketflow.localhost
   JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75
 ---
 apiVersion: apps/v1

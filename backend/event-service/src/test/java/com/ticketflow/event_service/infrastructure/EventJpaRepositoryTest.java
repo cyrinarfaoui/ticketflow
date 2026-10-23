@@ -86,7 +86,7 @@ class EventJpaRepositoryTest {
         save("Zxq Opera C", EventCategory.THEATRE, NOW.plusDays(2), 10, EventStatus.OPEN);
         save("Zxq Opera annulé", EventCategory.THEATRE, NOW.plusDays(4), 10, EventStatus.CANCELLED);
 
-        var page = repository.searchForAdmin("zxq OPERA", EventStatus.OPEN,
+        var page = repository.searchForAdmin("zxq OPERA", EventStatus.OPEN, null,
                 org.springframework.data.domain.PageRequest.of(0, 2, org.springframework.data.domain.Sort.by("date")));
 
         assertThat(page.getTotalElements()).isEqualTo(3);   // l'annulé est exclu par le filtre de statut
@@ -98,9 +98,21 @@ class EventJpaRepositoryTest {
     void back_office_sans_filtre_renvoie_aussi_les_evenements_annules() {
         save("Zxq Annulé seul", EventCategory.THEATRE, NOW.plusDays(3), 10, EventStatus.CANCELLED);
 
-        var page = repository.searchForAdmin("zxq annulé seul", null, org.springframework.data.domain.PageRequest.of(0, 10));
+        var page = repository.searchForAdmin("zxq annulé seul", null, null, org.springframework.data.domain.PageRequest.of(0, 10));
 
         assertThat(titres(page.getContent())).containsExactly("Zxq Annulé seul");
+    }
+
+    @Test
+    void back_office_filtre_les_evenements_complets() {
+        save("Zxq Dispo complet", EventCategory.THEATRE, NOW.plusDays(3), 0);
+        save("Zxq Dispo libre", EventCategory.THEATRE, NOW.plusDays(4), 5);
+
+        var complets = repository.searchForAdmin("zxq dispo", EventStatus.OPEN, true, org.springframework.data.domain.PageRequest.of(0, 10));
+        var ouverts = repository.searchForAdmin("zxq dispo", EventStatus.OPEN, false, org.springframework.data.domain.PageRequest.of(0, 10));
+
+        assertThat(titres(complets.getContent())).containsExactly("Zxq Dispo complet");
+        assertThat(titres(ouverts.getContent())).containsExactly("Zxq Dispo libre");
     }
 
     private void save(String title, EventCategory category, LocalDateTime date, int availableSeats) {

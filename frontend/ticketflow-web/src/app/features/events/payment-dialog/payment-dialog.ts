@@ -2,11 +2,12 @@ import { afterNextRender, Component, computed, DestroyRef, ElementRef, inject, i
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap, tap, TimeoutError } from 'rxjs';
 import { EventResponse } from '../../../core/services/event.service';
 import { ReservationService } from '../../../core/services/reservation.service';
+import { LiveNotificationStore } from '../../../core/stores/live-notification.store';
 import {
   declineLabel, digitsOnly, formatCardNumber, formatPrice, isValidCardNumber, isValidExpiry, TEST_CARDS, tokenizeTestCard,
 } from '../../../core/models/payment';
@@ -27,13 +28,15 @@ const expiryValidator = (control: AbstractControl): ValidationErrors | null =>
  */
 @Component({
   selector: 'app-payment-dialog',
-  imports: [ReactiveFormsModule, DatePipe, RouterLink],
+  imports: [ReactiveFormsModule, DatePipe],
   templateUrl: './payment-dialog.html',
   styleUrl: './payment-dialog.scss',
 })
 export class PaymentDialog {
   private readonly reservationService = inject(ReservationService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
+  private readonly notifications = inject(LiveNotificationStore);
 
   readonly event = input.required<EventResponse>();
   readonly seats = input.required<number>();
@@ -116,6 +119,7 @@ export class PaymentDialog {
       takeUntilDestroyed(this.destroyRef),
     ).subscribe({
       next: (reservation) => {
+        this.notifications.notifyReservation(reservation);   // la cloche du client : confirmée ou refusée
         if (reservation.status === 'CONFIRMED') {
           this.step.set('succeeded');
         } else {
@@ -142,6 +146,13 @@ export class PaymentDialog {
 
   close(): void {
     this.dialog().nativeElement.close();
+  }
+
+  // Fermer PUIS naviguer : avec un routerLink + (click)="close()", la fermeture détruisait
+  // la fenêtre (et son lien) avant que la navigation ne parte
+  goToMyReservations(): void {
+    this.close();
+    void this.router.navigateByUrl('/mes-reservations');
   }
 
   // Échap pendant la vérification : on ne ferme pas (le paiement est en cours)

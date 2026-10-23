@@ -16,17 +16,20 @@ describe('App', () => {
   // Faux store : le header ne fait que LIRE activeCount ; on contrôle sa valeur avec activeCount.set(...)
   let reservationStore: { activeCount: WritableSignal<number>; load: jasmine.Spy; clear: jasmine.Spy };
   // Faux store du flux en direct : pas de vraie connexion SSE pendant les tests
-  let liveStore: { connect: jasmine.Spy; disconnect: jasmine.Spy; markAllRead: jasmine.Spy;
+  let liveStore: { connect: jasmine.Spy; disconnect: jasmine.Spy; markAllRead: jasmine.Spy; setPublicActivity: jasmine.Spy;
+    showsPublicActivity: WritableSignal<boolean>;
     notifications: WritableSignal<never[]>; unreadCount: WritableSignal<number>; status: WritableSignal<string> };
 
   beforeEach(async () => {
     authService = jasmine.createSpyObj<AuthService>('AuthService', [
-      'isLoggedIn', 'username', 'login', 'logout', 'register', 'hasRole',
+      'isLoggedIn', 'username', 'login', 'logout', 'register', 'hasRole', 'isAdmin',
     ]);
     liveStore = {
       connect: jasmine.createSpy('connect'),
       disconnect: jasmine.createSpy('disconnect'),
       markAllRead: jasmine.createSpy('markAllRead'),
+      setPublicActivity: jasmine.createSpy('setPublicActivity'),
+      showsPublicActivity: signal(false),
       notifications: signal([]),
       unreadCount: signal(0),
       status: signal('open'),

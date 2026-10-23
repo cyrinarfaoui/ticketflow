@@ -11,9 +11,13 @@ import { Page } from '../../../core/models/reservation';
 import { DatePipe } from '@angular/common';
 import { futureDate } from '../../../shared/validators/future-date.validator';
 import { DialogService } from '../../../shared/dialog/dialog.service';
+import { ErrorMessages, firstError } from '../../../shared/forms/first-error';
 
 // 6 lignes compactes : une page entière tient dans le panneau, on change de page au lieu de défiler
 export const EVENTS_PAGE_SIZE = 6;
+
+// Les champs obligatoires du formulaire (marqués d'un * dans l'écran)
+type RequiredField = 'title' | 'location' | 'category' | 'date' | 'totalSeats' | 'price';
 
 /** Back-office des événements : la liste à gauche, l'événement choisi (modifiable) à droite. */
 @Component({
@@ -21,6 +25,8 @@ export const EVENTS_PAGE_SIZE = 6;
   imports: [ReactiveFormsModule, DatePipe],
   templateUrl: './event-admin.html',
   styleUrl: './event-admin.scss',
+  // Un clic n'importe où ailleurs dans la page referme le détail de l'événement choisi
+  host: { '(document:click)': 'onDocumentClick($event)' },
 })
 export class EventAdmin {
   private readonly adminService = inject(AdminService);
@@ -30,7 +36,8 @@ export class EventAdmin {
 
   // 1. LES FILTRES ET LA PAGE : ce que l'admin a choisi
   protected readonly searchInput = signal('');                 // ce qui est tapé, à chaque frappe
-  protected readonly status = signal<EventStatus | ''>('');    // '' = tous les statuts
+  // '' = tous les statuts ; 'FULL' = complets (ouverts mais sans place : ce n'est pas un statut en base)
+  protected readonly status = signal<EventStatus | 'FULL' | ''>('');
   protected readonly page = signal(0);                         // première page = 0 (convention Spring)
 
   // On attend 300 ms de calme avant de chercher : pas une requête à chaque lettre tapée
@@ -44,7 +51,13 @@ export class EventAdmin {
   protected readonly events = httpResource<Page<EventResponse>>(() => {
     const params: Record<string, string | number> = { page: this.page(), size: EVENTS_PAGE_SIZE, sort: 'date,asc' };
     if (this.search()) params['title'] = this.search();
-    if (this.status()) params['status'] = this.status();
+    const status = this.status();
+    if (status === 'FULL' || status === 'OPEN') {
+      params['status'] = 'OPEN';
+      params['soldOut'] = String(status === 'FULL');   // "Ouverts" = il reste des places, comme le badge
+    } else if (status) {
+      params['status'] = status;
+    }
     return { url: `${API_BASE_URL}/events/admin`, params };
   });
 
@@ -69,7 +82,7 @@ export class EventAdmin {
   }
 
   onStatusChange(value: string): void {
-    this.status.set(value as EventStatus | '');
+    this.status.set(value as EventStatus | 'FULL' | '');
     this.page.set(0);
   }
 
@@ -91,6 +104,20 @@ export class EventAdmin {
     price: [0, [Validators.required, Validators.min(0.01)]],
   });
 
+  // Le message affiché SOUS chaque champ, selon l'erreur (une seule à la fois, dans cet ordre)
+  private readonly errorMessages: Record<RequiredField, ErrorMessages> = {
+    title: { required: 'Le titre est obligatoire.', minlength: 'Le titre doit contenir au moins 3 caractères.' },
+    location: { required: 'Le lieu est obligatoire.' },
+    category: { required: 'Choisissez une catégorie.' },
+    date: { required: 'La date est obligatoire.', pastDate: 'La date doit être dans le futur.' },
+    totalSeats: { required: 'La capacité est obligatoire.', min: 'Il faut au moins 1 place.' },
+    price: { required: 'Le prix est obligatoire.', min: 'Le prix doit être supérieur à 0.' },
+  };
+
+  protected error(field: RequiredField): string | null {
+    return firstError(this.form.controls[field], this.errorMessages[field]);
+  }
+
   // Clic sur un événement de la liste : on remplit le formulaire avec ses valeurs
   // Bouton "Nouvel événement" : le panneau de droite passe en mode création (formulaire vide)
   startCreation(): void {
@@ -104,6 +131,20 @@ export class EventAdmin {
   // Bouton "Retour" : on quitte la création sans rien enregistrer
   cancelCreation(): void {
     this.creating.set(false);
+  }
+
+  /**
+   * Clic en dehors de la liste, du détail et des fenêtres de confirmation : on désélectionne l'événement.
+   * Sauf si le formulaire a des modifications non enregistrées : on ne les jette jamais sans prévenir.
+   */
+  protected onDocumentClick(event: MouseEvent): void {
+    const target = event.target as Element | null;
+    if (!this.selectedId() || this.form.dirty || !target?.isConnected) {
+      return;
+    }
+    if (!target.closest('.list-item, .detail, dialog, app-dialog-host')) {
+      this.selectedId.set(null);
+    }
   }
 
   select(event: EventResponse): void {
@@ -130,6 +171,23 @@ export class EventAdmin {
   /** Un événement déjà passé (sa date est dépassée) : il a eu lieu, on ne le modifie plus. */
   protected isPast(event: EventResponse): boolean {
     return new Date(event.date).getTime() < Date.now();
+  }
+
+  /**
+   * Le badge d'état. "Complet" n'est pas un statut en base : l'événement reste OUVERT (si des places sont
+   * libérées, par une expiration ou une annulation, la vente reprend toute seule), mais il n'y a plus rien à vendre.
+   */
+  protected badge(event: EventResponse): { status: string; label: string } {
+    if (event.status === 'CANCELLED') {
+      return { status: 'CANCELLED', label: 'Annulé' };
+    }
+    if (this.isPast(event)) {
+      return { status: 'PAST', label: 'Passé' };
+    }
+    if (event.status === 'CLOSED') {
+      return { status: 'CLOSED', label: 'Clôturé' };
+    }
+    return event.availableSeats === 0 ? { status: 'FULL', label: 'Complet' } : { status: 'OPEN', label: 'Ouvert' };
   }
 
   /** Règles du backend reflétées dans l'interface : annulé ou passé = lecture seule. */
@@ -224,4 +282,4 @@ export class EventAdmin {
       },
     });
   }
-}
+}

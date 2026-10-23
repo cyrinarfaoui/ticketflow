@@ -78,7 +78,7 @@
     @case ('succeeded') {
       <div class="state state--success" role="status">
         <p><span aria-hidden="true">✅</span> Paiement accepté : votre réservation est confirmée.</p>
-        <a routerLink="/mes-reservations" (click)="close()">Voir mes réservations</a>
+        <a href="/mes-reservations" (click)="$event.preventDefault(); goToMyReservations()">Voir mes réservations</a>
         <button type="button" class="link-button" (click)="close()">Fermer</button>
       </div>
     }

@@ -29,14 +29,6 @@ describe('ReservationService', () => {
     req.flush({});
   });
 
-  it('annule une réservation avec POST /reservations/{id}/cancel', () => {
-    service.cancelReservation('r1').subscribe();
-
-    const req = httpMock.expectOne(`${API_BASE_URL}/reservations/r1/cancel`);
-    expect(req.request.method).toBe('POST');
-    req.flush({});
-  });
-
   describe('attente du résultat du paiement (saga asynchrone)', () => {
     const ME_URL = `${API_BASE_URL}/reservations/me`;
     const mine = (status: MyReservation['status']) => [{ id: 'r1', status } as MyReservation];

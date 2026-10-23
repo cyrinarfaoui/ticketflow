@@ -1,4 +1,4 @@
-# Frontend Angular : image de PRODUCTION (compilée, servie par nginx), publiée sur http://localhost:4200.
+# Frontend Angular : image de PRODUCTION (compilée, servie par nginx), publiée sur http://ticketflow.localhost (port 80).
 # L'image se construit avec : docker build -t ticketflow-web:prod frontend/ticketflow-web
 apiVersion: apps/v1
 kind: Deployment
@@ -38,5 +38,5 @@ spec:
   selector:
     app: ticketflow-web
   ports:
-    - port: 4200          # l'adresse vue par le navigateur (inchangée : Keycloak et le CORS l'attendent)
+    - port: 80            # http://ticketflow.localhost : le navigateur résout *.localhost vers la machine, sans port à taper
       targetPort: 80      # nginx dans le conteneur

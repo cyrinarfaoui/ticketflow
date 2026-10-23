@@ -70,8 +70,10 @@ public class EventController {
     public PageResponse<EventResponse> listForAdmin(
             @RequestParam(required = false) String title,
             @RequestParam(required = false) EventStatus status,
+            // "Complet" n'est pas un statut en base : c'est un événement sans place restante
+            @RequestParam(required = false) Boolean soldOut,
             @PageableDefault(size = 10, sort = "date", direction = Sort.Direction.ASC) Pageable pageable) {
-        return PageResponse.from(eventService.listForAdmin(title, status, pageable).map(EventResponse::from));
+        return PageResponse.from(eventService.listForAdmin(title, status, soldOut, pageable).map(EventResponse::from));
     }
 
     @PostMapping("/{id}/close")

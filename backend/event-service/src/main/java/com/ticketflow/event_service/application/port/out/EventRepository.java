@@ -25,6 +25,6 @@ public interface EventRepository {
     // Lit l'événement en le verrouillant jusqu'à la fin de la transaction (réservations concurrentes)
     Optional<Event> findByIdForUpdate(UUID id);
     // Back-office : tous les événements, filtrés et paginés
-    Page<Event> searchForAdmin(String title, EventStatus status, Pageable pageable);
+    Page<Event> searchForAdmin(String title, EventStatus status, Boolean soldOut, Pageable pageable);
     void deleteById(UUID id);
 }

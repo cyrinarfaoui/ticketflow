@@ -3,15 +3,14 @@ package com.ticketflow.event_service.infrastructure.web;
 import com.ticketflow.event_service.application.ReservationService;
 import com.ticketflow.event_service.application.ReservationWithEvent;
 import com.ticketflow.event_service.domain.Reservation;
+import com.ticketflow.event_service.domain.ReservationStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import java.util.List;
 import java.util.UUID;
@@ -68,23 +67,13 @@ class ReservationControllerTest {
     }
 
     @Test
-    void annulation_par_un_utilisateur_simple_transmet_admin_false() {
+    void annulation_delegue_au_service_et_renvoie_la_reservation_annulee() {
         Reservation reservation = cancelled();
-        when(reservationService.cancelReservation(reservation.getId(), "user-1", false)).thenReturn(reservation);
+        when(reservationService.cancelReservation(reservation.getId())).thenReturn(reservation);
 
-        controller.cancelReservation(reservation.getId(), new JwtAuthenticationToken(JWT, List.of(new SimpleGrantedAuthority("ROLE_USER"))));
+        ReservationResponse response = controller.cancelReservation(reservation.getId());
 
-        verify(reservationService).cancelReservation(reservation.getId(), "user-1", false);
-    }
-
-    @Test
-    void annulation_par_un_admin_transmet_admin_true() {
-        Reservation reservation = cancelled();
-        when(reservationService.cancelReservation(reservation.getId(), "user-1", true)).thenReturn(reservation);
-
-        controller.cancelReservation(reservation.getId(), new JwtAuthenticationToken(JWT, List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));
-
-        verify(reservationService).cancelReservation(reservation.getId(), "user-1", true);
+        assertThat(response.status()).isEqualTo(ReservationStatus.CANCELLED);
     }
 
     private static Reservation cancelled() {

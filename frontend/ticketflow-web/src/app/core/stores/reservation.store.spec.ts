@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ReservationStore } from './reservation.store';
 import { API_BASE_URL } from '../config/api.config';
 import { MyReservation } from '../models/reservation';
+import { LiveNotificationStore } from './live-notification.store';
 
 const ME_URL = `${API_BASE_URL}/reservations/me`;
 
@@ -27,6 +28,18 @@ describe('ReservationStore', () => {
   });
 
   afterEach(() => httpMock.verify());
+
+  it("annonce au client une réservation qui a changé d'état depuis le dernier chargement", () => {
+    const notifyReservation = spyOn(TestBed.inject(LiveNotificationStore), 'notifyReservation');
+    store.load();
+    httpMock.expectOne(ME_URL).flush([reservation('r1', 'PENDING'), reservation('r2', 'CONFIRMED')]);
+
+    store.load();
+    const expired = reservation('r1', 'EXPIRED');
+    httpMock.expectOne(ME_URL).flush([expired, reservation('r2', 'CONFIRMED')]);
+
+    expect(notifyReservation).toHaveBeenCalledOnceWith(expired);   // r2 n'a pas changé : rien
+  });
 
   function loadWith(reservations: MyReservation[]): void {
     store.load();
@@ -67,33 +80,6 @@ describe('ReservationStore', () => {
     expect(store.status()).toBe('error');
   });
 
-  describe('annulation optimiste', () => {
-
-    it('met l\'écran à jour AVANT la réponse du serveur', () => {
-      loadWith([reservation('r1', 'PENDING')]);
-
-      store.cancel('r1').subscribe();
-
-      // La requête n'a pas encore répondu, mais l'état a déjà changé
-      expect(store.reservations()[0].status).toBe('CANCELLED');
-      expect(store.activeCount()).toBe(0);
-      httpMock.expectOne(`${API_BASE_URL}/reservations/r1/cancel`).flush({});
-      expect(store.reservations()[0].status).toBe('CANCELLED');
-    });
-
-    it('revient en arrière si le serveur refuse', () => {
-      loadWith([reservation('r1', 'PENDING')]);
-
-      store.cancel('r1').subscribe({ error: () => { /* le composant affichera le message */ } });
-      httpMock
-        .expectOne(`${API_BASE_URL}/reservations/r1/cancel`)
-        .flush({ error: 'Déjà annulée' }, { status: 409, statusText: 'Conflict' });
-
-      expect(store.reservations()[0].status).toBe('PENDING');   // rollback
-      expect(store.activeCount()).toBe(1);
-    });
-  });
-
   it('se vide à la déconnexion', () => {
     loadWith([reservation('r1', 'PENDING')]);
 
@@ -102,4 +88,4 @@ describe('ReservationStore', () => {
     expect(store.reservations()).toEqual([]);
     expect(store.status()).toBe('idle');
   });
-});
+});
